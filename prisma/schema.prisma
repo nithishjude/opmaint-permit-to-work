@@ -1,0 +1,221 @@
+// Permit to Work â€” data model
+//
+// Design in one paragraph:
+//   Every permit type shares ONE `Permit` row holding the common core
+//   (requester, contractor, location, window, hazards, PPE, precautions, status).
+//   The fields that differ per type live in `typeData` (JSONB), validated in the
+//   application against the permit-type registry (src/domain/permit-types).
+//   Adding a new type (e.g. Excavation) = one registry entry, zero migrations.
+//   Approvals are rows, created on submit from the type's required approver roles.
+//   AuditLog is append-only and protected by a database trigger.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  REQUESTER
+  AREA_OWNER
+  SAFETY_OFFICER
+  ADMIN
+}
+
+enum PermitStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  ACTIVE
+  SUSPENDED
+  CLOSED
+  CLOSED_VERIFIED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+enum ApprovalDecision {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ExtensionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  ownedAreas       Area[]             @relation("AreaOwner")
+  permitsRequested Permit[]           @relation("Requester")
+  approvals        PermitApproval[]
+  auditEntries     AuditLog[]
+  workLogs         WorkLog[]
+  extensionsAsked  ExtensionRequest[] @relation("ExtensionRequester")
+  extensionsDecided ExtensionRequest[] @relation("ExtensionDecider")
+}
+
+model Plant {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  location  String?
+  areas     Area[]
+  createdAt DateTime @default(now())
+}
+
+model Area {
+  id        String      @id @default(cuid())
+  code      String
+  name      String
+  plantId   String
+  plant     Plant       @relation(fields: [plantId], references: [id])
+  ownerId   String?
+  owner     User?       @relation("AreaOwner", fields: [ownerId], references: [id])
+  equipment Equipment[]
+  permits   Permit[]
+  createdAt DateTime    @default(now())
+
+  @@unique([plantId, code])
+}
+
+model Equipment {
+  id        String   @id @default(cuid())
+  tag       String   @unique // e.g. P-101A â€” what is painted on the asset
+  name      String
+  areaId    String
+  area      Area     @relation(fields: [areaId], references: [id])
+  permits   Permit[]
+  createdAt DateTime @default(now())
+}
+
+model Permit {
+  id     String       @id @default(cuid())
+  number String       @unique // human id: PTW-2026-0001
+  type   String // key into the permit-type registry: HOT_WORK, CONFINED_SPACE, ...
+  status PermitStatus @default(DRAFT)
+
+  // --- common core ---
+  requesterId     String
+  requester       User       @relation("Requester", fields: [requesterId], references: [id])
+  contractor      String // company / crew performing the work
+  crewSize        Int?
+  workDescription String
+  areaId          String
+  area            Area       @relation(fields: [areaId], references: [id])
+  equipmentId     String?
+  equipment       Equipment? @relation(fields: [equipmentId], references: [id])
+  locationDetail  String? // "north side of rack, 4th bay"
+
+  plannedStart DateTime
+  plannedEnd   DateTime
+  // Effective end of validity. Starts equal to plannedEnd and only moves via an
+  // approved extension. Expiry is decided against this column.
+  validUntil   DateTime
+
+  hazards     String[]
+  ppe         String[]
+  // [{ id, label, checked }] â€” checklist answered by the requester
+  precautions Json     @default("[]")
+  // type-specific fields, shape defined by the registry
+  typeData    Json     @default("{}")
+
+  completionNotes   String?
+  verificationNotes String?
+  extensionCount    Int     @default(0)
+
+  submittedAt DateTime?
+  activatedAt DateTime?
+  closedAt    DateTime?
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  approvals  PermitApproval[]
+  auditLogs  AuditLog[]
+  workLogs   WorkLog[]
+  extensions ExtensionRequest[]
+
+  @@index([status, validUntil])
+  @@index([areaId, plannedStart])
+}
+
+// One row per required sign-off. `role` is the slot (AREA_OWNER / SAFETY_OFFICER)
+// that has to be filled; `approverId` is who actually filled it.
+model PermitApproval {
+  id         String           @id @default(cuid())
+  permitId   String
+  permit     Permit           @relation(fields: [permitId], references: [id], onDelete: Cascade)
+  role       Role
+  decision   ApprovalDecision @default(PENDING)
+  approverId String?
+  approver   User?            @relation(fields: [approverId], references: [id])
+  comment    String?
+  signature  String? // data:image/png;base64,... drawn on canvas
+  decidedAt  DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@unique([permitId, role])
+}
+
+// Immutable. UPDATE and DELETE are blocked by a trigger (see migration
+// *_audit_log_immutable). actorId null = the system (e.g. auto-expiry).
+model AuditLog {
+  id        String   @id @default(cuid())
+  permitId  String
+  permit    Permit   @relation(fields: [permitId], references: [id])
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String // CREATED, SUBMITTED, APPROVED, FIELD_CHANGED, SUSPENDED, ...
+  field     String?
+  fromValue String?
+  toValue   String?
+  comment   String?
+  createdAt DateTime @default(now())
+
+  @@index([permitId, createdAt])
+}
+
+// Work progress notes, and for confined spaces the entry/exit register.
+model WorkLog {
+  id        String   @id @default(cuid())
+  permitId  String
+  permit    Permit   @relation(fields: [permitId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  kind      String // NOTE | ENTRY | EXIT
+  person    String? // who entered / exited (confined space)
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([permitId, createdAt])
+}
+
+model ExtensionRequest {
+  id            String          @id @default(cuid())
+  permitId      String
+  permit        Permit          @relation(fields: [permitId], references: [id])
+  requestedById String
+  requestedBy   User            @relation("ExtensionRequester", fields: [requestedById], references: [id])
+  hours         Int
+  reason        String
+  status        ExtensionStatus @default(PENDING)
+  decidedById   String?
+  decidedBy     User?           @relation("ExtensionDecider", fields: [decidedById], references: [id])
+  decisionNote  String?
+  decidedAt     DateTime?
+  createdAt     DateTime        @default(now())
+}
