@@ -159,6 +159,7 @@ export function authorize(actor: Actor, action: PermitAction, p: PermitForAuth, 
       return now < p.validUntil ? ALLOW : byPrecondition("Too late — the permit has expired.");
 
     case "DECIDE_EXTENSION":
+      if (!["APPROVED", "ACTIVE", "SUSPENDED"].includes(p.status)) return byState("The permit is no longer live.");
       if (!p.hasPendingExtension) return byState("No extension request is pending.");
       if (own) return byRole("You cannot approve an extension of your own permit.");
       return isSafety(actor) ? ALLOW : byRole("Only a safety officer can approve extensions.");

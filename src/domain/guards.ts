@@ -23,7 +23,7 @@ export interface ActivatablePermit {
   approvals: ApprovalSlot[];
 }
 
-export function allApproved(approvals: ApprovalSlot[]): boolean {
+export function allApproved(approvals: Pick<ApprovalSlot, "decision">[]): boolean {
   return approvals.length > 0 && approvals.every((a) => a.decision === "APPROVED");
 }
 
