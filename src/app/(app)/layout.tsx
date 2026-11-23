@@ -16,7 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen flex-col">
       {/* Opaque, hairline from first paint, same at every scroll depth. */}
-      <header className="border-b border-black bg-ink text-white">
+      <header className="border-b border-navy-deep bg-navy text-white">
         <a href="#main" className="absolute left-2 top-2 z-20 -translate-y-20 rounded-sm bg-white px-3 py-2 text-ink focus:translate-y-0">
           Skip to content
         </a>

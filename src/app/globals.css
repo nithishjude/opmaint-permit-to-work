@@ -29,7 +29,7 @@ body {
 }
 
 ::selection {
-  background: #cfdcf6;
+  background: #c9e6ee;
 }
 
 /* Focus: a 2px accent ring whose offset settles from 6px to 2px. */
@@ -150,7 +150,7 @@ body {
     .card-link:hover {
       transform: translateY(-2px);
       border-color: theme("colors.line.strong");
-      box-shadow: 0 10px 24px -12px rgba(28, 27, 25, 0.18);
+      box-shadow: 0 10px 24px -12px rgba(11, 37, 69, 0.22);
       transition-duration: var(--m-in);
     }
   }
@@ -185,7 +185,7 @@ body {
   }
   .input:focus {
     @apply border-action outline-none;
-    box-shadow: 0 0 0 3px rgba(20, 82, 196, 0.16);
+    box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.18);
   }
   .input:disabled {
     @apply cursor-not-allowed bg-ground text-ink-muted;

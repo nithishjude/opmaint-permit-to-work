@@ -21,7 +21,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const demo = DEMO_USERS.map((u) => ({ email: u.email, name: u.name, role: u.role }));
   return (
     <main className="grid min-h-screen lg:grid-cols-[1fr_minmax(440px,520px)]">
-      <section className="hidden flex-col justify-between bg-ink p-12 text-white lg:flex">
+      <section className="hidden flex-col justify-between bg-navy p-12 text-white lg:flex">
         <div className="flex items-center gap-2.5 text-lg font-semibold">
           <BrandMark className="h-9 w-9" />
           Permit to Work
