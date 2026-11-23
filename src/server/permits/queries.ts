@@ -49,10 +49,8 @@ const dayStartIST = (d: string) => new Date(`${d}T00:00:00+05:30`);
 export async function listPermits(actor: Actor, filters: PermitFilters, now = new Date()): Promise<PermitListItem[]> {
   await expireDuePermits(now);
 
-  const where: Prisma.PermitWhereInput = {
-    // Drafts are private to their author (and admins).
-    OR: [{ status: { not: "DRAFT" } }, { requesterId: actor.id }, ...(actor.role === "ADMIN" ? [{}] : [])],
-  };
+  // Drafts are private to their author (and admins).
+  const where: Prisma.PermitWhereInput = actor.role === "ADMIN" ? {} : { OR: [{ status: { not: "DRAFT" } }, { requesterId: actor.id }] };
   const and: Prisma.PermitWhereInput[] = [];
   if (filters.status) and.push({ status: filters.status });
   if (filters.type) and.push({ type: filters.type });
