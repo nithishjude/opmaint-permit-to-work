@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Plus, SlidersHorizontal, X } from "lucide-react";
 import type { Metadata } from "next";
 import { requirePageUser } from "@/server/auth";
 import { getReferenceData, listPermits, permitFiltersSchema } from "@/server/permits/queries";
@@ -11,9 +12,9 @@ export const dynamic = "force-dynamic";
 
 const VIEWS = [
   { value: "", label: "All" },
-  { value: "live", label: "Live (approved / active / suspended)" },
+  { value: "live", label: "Live on site" },
   { value: "expiring", label: "Expiring < 2 h" },
-  { value: "my-approvals", label: "My approvals pending" },
+  { value: "my-approvals", label: "Waiting for my sign-off" },
   { value: "mine", label: "Raised by me" },
 ];
 
@@ -26,10 +27,17 @@ export default async function PermitsPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <h1 className="text-2xl font-black">Permits</h1>
-        <Link href="/permits/new" className="btn-primary">
-          + Raise a permit
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-[28px] font-semibold leading-tight tracking-tight sm:text-[32px]">Permits</h1>
+          <p className="mt-1 text-ink-muted">
+            {permits.length} permit{permits.length === 1 ? "" : "s"}
+            {anyFilter ? " match these filters" : " across both plants"}
+          </p>
+        </div>
+        <Link href="/permits/new" className="btn-primary w-full sm:w-auto">
+          <Plus aria-hidden />
+          Raise a permit
         </Link>
       </div>
 
@@ -41,7 +49,8 @@ export default async function PermitsPage({ searchParams }: { searchParams: Prom
             <Link
               key={v.value}
               href={v.value ? `/permits?view=${v.value}` : "/permits"}
-              className={`flex min-h-[44px] items-center whitespace-nowrap rounded-full px-4 text-sm font-semibold ring-1 ring-inset ${active ? "bg-slate-900 text-white ring-slate-900" : "bg-white text-slate-800 ring-slate-300 hover:ring-slate-500"}`}
+              aria-current={active ? "page" : undefined}
+              className={`flex min-h-[44px] items-center whitespace-nowrap rounded-full border px-4 text-[15px] font-medium transition-colors duration-out ease-ui ${active ? "border-ink bg-ink text-white" : "border-line-strong bg-white text-ink-2 hover:border-ink-muted hover:text-ink"}`}
             >
               {v.label}
             </Link>
@@ -50,7 +59,7 @@ export default async function PermitsPage({ searchParams }: { searchParams: Prom
       </nav>
 
       {/* Plain GET form: filters live in the URL, so a filtered list can be bookmarked or shared. */}
-      <form className="card grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 lg:grid-cols-6" method="get">
+      <form className="card grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-6" method="get">
         {filters.view && <input type="hidden" name="view" value={filters.view} />}
         <div className="lg:col-span-2">
           <label className="label" htmlFor="q">Search</label>
@@ -102,17 +111,20 @@ export default async function PermitsPage({ searchParams }: { searchParams: Prom
           <input id="to" name="to" type="date" className="input" defaultValue={filters.to ?? ""} />
         </div>
         <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
-          <button className="btn-primary">Apply filters</button>
+          <button className="btn-secondary">
+            <SlidersHorizontal aria-hidden />
+            Apply filters
+          </button>
           {anyFilter && (
-            <Link href="/permits" className="btn-secondary">
-              Clear
+            <Link href="/permits" className="btn-text">
+              <X aria-hidden />
+              Clear all
             </Link>
           )}
-          <span className="ml-auto self-center text-sm text-slate-600">{permits.length} permit{permits.length === 1 ? "" : "s"}</span>
         </div>
       </form>
 
-      <PermitRows permits={permits} empty={filters.view === "my-approvals" ? "Nothing is waiting for your approval. 👍" : "No permits match these filters."} />
+      <PermitRows permits={permits} empty={filters.view === "my-approvals" ? "Nothing is waiting for your sign-off." : "No permits match these filters."} />
     </div>
   );
 }

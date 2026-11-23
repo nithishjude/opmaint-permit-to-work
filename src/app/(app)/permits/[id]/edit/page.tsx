@@ -19,7 +19,7 @@ export default async function EditPermitPage({ params }: { params: Promise<{ id:
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-black">Edit draft {permit.number}</h1>
+        <h1 className="text-2xl font-semibold">Edit draft {permit.number}</h1>
         <TypeBadge type={permit.type} />
       </div>
       <PermitForm

@@ -5,7 +5,6 @@ export const confinedSpace: PermitTypeDefinition = {
   label: "Confined Space Entry",
   shortLabel: "Confined",
   description: "Entry into tanks, vessels, pits, manholes, ducts — limited access, poor ventilation.",
-  badgeClass: "bg-purple-100 text-purple-900 ring-purple-300",
   maxDurationHours: 8,
   requiredApprovals: ["AREA_OWNER", "SAFETY_OFFICER"],
   conflictsWith: ["HOT_WORK"],

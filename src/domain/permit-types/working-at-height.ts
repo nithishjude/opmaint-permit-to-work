@@ -5,7 +5,6 @@ export const workingAtHeight: PermitTypeDefinition = {
   label: "Working at Height",
   shortLabel: "Height",
   description: "Any work where a person could fall 1.8 m or more.",
-  badgeClass: "bg-sky-100 text-sky-900 ring-sky-300",
   maxDurationHours: 12,
   requiredApprovals: ["AREA_OWNER", "SAFETY_OFFICER"],
   fields: [

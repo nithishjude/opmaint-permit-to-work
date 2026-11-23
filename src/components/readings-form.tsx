@@ -4,6 +4,7 @@
 // Only fields the registry marks `editableAfterSubmit` are offered; the server
 // enforces the same list and audits every change with from → to.
 
+import { CircleCheck, Gauge, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { getPermitType, type TypeData } from "@/domain/permit-types";
 import { TypeFields } from "./type-fields";
@@ -26,7 +27,8 @@ export function ReadingsForm({ permitId, type, typeData, status }: { permitId: s
   return (
     <div>
       <button type="button" className="btn-secondary w-full" onClick={() => setOpen(!open)} aria-expanded={open}>
-        {open ? "Hide" : "Record"} readings / re-test
+        <Gauge aria-hidden />
+        {open ? "Hide readings" : "Record readings / re-test"}
       </button>
       {open && (
         <form
@@ -41,9 +43,10 @@ export function ReadingsForm({ permitId, type, typeData, status }: { permitId: s
           }}
         >
           {status === "ACTIVE" && (
-            <p className="rounded-lg bg-amber-50 p-2 text-sm font-semibold text-amber-950 ring-1 ring-amber-300">
-              Entering a reading outside the safe range will suspend this permit immediately.
-            </p>
+            <div className="callout-warning">
+              <TriangleAlert aria-hidden />
+              <p className="text-[15px] font-semibold">A reading outside the safe range will stop work on this permit immediately.</p>
+            </div>
           )}
           <TypeFields fields={fields} value={value} onChange={(v) => { setValue(v); setSaved(false); }} />
           <div>
@@ -51,7 +54,11 @@ export function ReadingsForm({ permitId, type, typeData, status }: { permitId: s
             <input id="rd-comment" className="input" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="e.g. Re-test after break" />
           </div>
           {error && <p className="field-error">{error}</p>}
-          {saved && <p className="font-semibold text-green-800">✓ Saved and logged.</p>}
+          {saved && (
+            <p className="flex items-center gap-1.5 font-semibold text-good">
+              <CircleCheck aria-hidden className="h-4 w-4" /> Saved and logged.
+            </p>
+          )}
           <button className="btn-primary w-full" disabled={busy || !changed}>
             {busy ? "Saving…" : "Save readings"}
           </button>

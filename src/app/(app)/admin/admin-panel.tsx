@@ -48,16 +48,16 @@ export function AdminPanel({ data, currentUserId, demoMode }: { data: Data; curr
   return (
     <div className="space-y-6">
       {error && (
-        <div role="alert" className="rounded-lg bg-red-50 p-3 font-semibold text-red-900 ring-1 ring-red-300">
+        <div role="alert" className="callout-critical font-semibold">
           {error}
         </div>
       )}
 
-      <section className="card p-4 sm:p-5">
-        <h2 className="mb-3 text-lg font-black">Users</h2>
+      <section className="card p-4 sm:p-6">
+        <h2 className="panel-title mb-4">Users</h2>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-left text-sm">
-            <thead className="text-slate-600">
+            <thead className="text-ink-muted">
               <tr>
                 <th className="py-2">Name</th>
                 <th>Email</th>
@@ -65,9 +65,9 @@ export function AdminPanel({ data, currentUserId, demoMode }: { data: Data; curr
                 <th>Active</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-ground">
               {data.users.map((u) => (
-                <tr key={u.id} className={u.active ? "" : "text-slate-400"}>
+                <tr key={u.id} className={u.active ? "" : "text-ink-faint"}>
                   <td className="py-2 font-semibold">{u.name}</td>
                   <td>{u.email}</td>
                   <td>
@@ -86,8 +86,8 @@ export function AdminPanel({ data, currentUserId, demoMode }: { data: Data; curr
                     </select>
                   </td>
                   <td>
-                    <button type="button" className="btn-ghost" disabled={busy || u.id === currentUserId} onClick={() => call(`/api/admin/users/${u.id}`, { active: !u.active }, "PATCH")}>
-                      {u.active ? "✓ Active" : "Inactive"}
+                    <button type="button" className={`btn-text no-underline ${u.active ? "text-good" : "text-ink-muted"}`} disabled={busy || u.id === currentUserId} onClick={() => call(`/api/admin/users/${u.id}`, { active: !u.active }, "PATCH")}>
+                      {u.active ? "Active" : "Inactive"}
                     </button>
                   </td>
                 </tr>
@@ -106,25 +106,25 @@ export function AdminPanel({ data, currentUserId, demoMode }: { data: Data; curr
             ))}
           </select>
           <input name="password" type="password" className="input" placeholder="Initial password (8+)" required minLength={8} />
-          <button className="btn-primary" disabled={busy}>
+          <button className="btn-secondary" disabled={busy}>
             Add user
           </button>
         </form>
       </section>
 
-      <section className="card p-4 sm:p-5">
-        <h2 className="mb-3 text-lg font-black">Plants, areas & equipment</h2>
+      <section className="card p-4 sm:p-6">
+        <h2 className="panel-title mb-4">Plants, areas & equipment</h2>
         <div className="space-y-5">
           {data.plants.map((p) => (
-            <div key={p.id} className="rounded-lg ring-1 ring-slate-200">
-              <h3 className="rounded-t-lg bg-slate-900 px-3 py-2 font-bold text-white">
+            <div key={p.id} className="overflow-hidden rounded-md border border-line">
+              <h3 className="bg-ground-alt px-4 py-3 font-semibold text-ink">
                 {p.code} · {p.name}
               </h3>
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-ground">
                 {p.areas.map((a) => (
                   <li key={a.id} className="space-y-2 p-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-bold">
+                      <span className="font-semibold">
                         {a.code} · {a.name}
                       </span>
                       <label className="ml-auto flex items-center gap-2 text-sm">
@@ -141,7 +141,7 @@ export function AdminPanel({ data, currentUserId, demoMode }: { data: Data; curr
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {a.equipment.map((e) => (
-                        <span key={e.id} className="rounded bg-slate-100 px-2 py-1 text-xs">
+                        <span key={e.id} className="chip text-[13px]">
                           <strong>{e.tag}</strong> {e.name}
                         </span>
                       ))}
@@ -157,7 +157,7 @@ export function AdminPanel({ data, currentUserId, demoMode }: { data: Data; curr
                   </li>
                 ))}
               </ul>
-              <form className="flex flex-wrap gap-2 border-t border-slate-200 p-3" onSubmit={formSubmit("/api/admin/areas")}>
+              <form className="flex flex-wrap gap-2 border-t border-line p-3" onSubmit={formSubmit("/api/admin/areas")}>
                 <input type="hidden" name="plantId" value={p.id} />
                 <input name="code" className="input min-h-[40px] w-24" placeholder="Code" required />
                 <input name="name" className="input min-h-[40px] flex-1" placeholder="New area name" required />
@@ -180,21 +180,21 @@ export function AdminPanel({ data, currentUserId, demoMode }: { data: Data; curr
           <input name="code" className="input w-28" placeholder="Code" required />
           <input name="name" className="input flex-1" placeholder="New plant name" required />
           <input name="location" className="input flex-1" placeholder="Location" />
-          <button className="btn-primary" disabled={busy}>
+          <button className="btn-secondary" disabled={busy}>
             Add plant
           </button>
         </form>
       </section>
 
       {demoMode && (
-        <section className="card border-2 border-amber-500 p-4 sm:p-5">
-          <h2 className="text-lg font-black">Demo data</h2>
-          <p className="mb-3 text-sm text-slate-700">
+        <section className="card border-warning-line p-4 sm:p-6">
+          <h2 className="text-lg font-semibold">Demo data</h2>
+          <p className="mb-3 text-sm text-ink-2">
             Wipes everything and re-creates the demo with times relative to now (active, expiring, pending permits). You will be signed out.
           </p>
           <button
             type="button"
-            className="btn-warn"
+            className="btn-secondary"
             disabled={busy}
             onClick={async () => {
               if (!confirm("Wipe all data and re-seed the demo?")) return;

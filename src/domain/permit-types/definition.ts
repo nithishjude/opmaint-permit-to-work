@@ -16,8 +16,6 @@ export interface PermitTypeDefinition {
   label: string;
   shortLabel: string;
   description: string;
-  /** Tailwind classes for the type badge. */
-  badgeClass: string;
   fields: readonly FieldDef[];
   defaultHazards: readonly string[];
   defaultPpe: readonly string[];

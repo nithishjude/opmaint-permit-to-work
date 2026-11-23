@@ -1,38 +1,42 @@
 import { STATUS_LABELS, type PermitStatus } from "@/domain/enums";
 import { getPermitType } from "@/domain/permit-types";
+import { STATUS_META, typeIcon } from "./icons";
 
-// Colour is never the only signal: every status also has a text label and an icon.
-const STATUS_STYLE: Record<PermitStatus, { cls: string; icon: string }> = {
-  DRAFT: { cls: "bg-slate-100 text-slate-700 ring-slate-300", icon: "✎" },
-  PENDING_APPROVAL: { cls: "bg-amber-100 text-amber-900 ring-amber-400", icon: "⏳" },
-  APPROVED: { cls: "bg-blue-100 text-blue-900 ring-blue-400", icon: "✓" },
-  ACTIVE: { cls: "bg-green-700 text-white ring-green-800", icon: "●" },
-  SUSPENDED: { cls: "bg-red-700 text-white ring-red-800", icon: "■" },
-  CLOSED: { cls: "bg-teal-100 text-teal-900 ring-teal-400", icon: "◐" },
-  CLOSED_VERIFIED: { cls: "bg-slate-800 text-white ring-slate-900", icon: "✔" },
-  REJECTED: { cls: "bg-red-50 text-red-800 ring-red-300", icon: "✕" },
-  EXPIRED: { cls: "bg-slate-300 text-slate-800 ring-slate-400", icon: "⌛" },
-  CANCELLED: { cls: "bg-slate-100 text-slate-500 ring-slate-300 line-through", icon: "⊘" },
+// Status is the only coloured thing on a row, and never colour alone: every
+// badge has an icon and a label. ACTIVE and SUSPENDED are solid because they
+// are the two states someone on site must notice from arm's length.
+const TONE: Record<string, string> = {
+  neutral: "bg-white text-ink-2 border-line-strong",
+  info: "bg-info-soft text-info border-info-line",
+  warning: "bg-warning-soft text-warning border-warning-line",
+  good: "bg-good text-white border-good",
+  critical: "bg-critical text-white border-critical",
+  done: "bg-ink text-white border-ink",
+  muted: "bg-ground-alt text-ink-muted border-line",
 };
 
 export function StatusBadge({ status, large }: { status: PermitStatus; large?: boolean }) {
-  const s = STATUS_STYLE[status];
+  const { icon: Icon, tone } = STATUS_META[status];
+  const quiet = status === "REJECTED"; // rejected: red text on a soft ground, not a solid alarm
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full font-bold ring-1 ring-inset ${s.cls} ${
-        large ? "px-4 py-1.5 text-lg" : "px-2.5 py-0.5 text-xs"
-      }`}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border font-semibold ${
+        quiet ? "border-critical-line bg-critical-soft text-critical" : TONE[tone]
+      } ${large ? "px-3.5 py-1.5 text-base" : "px-2.5 py-0.5 text-[13px]"}`}
     >
-      <span aria-hidden>{s.icon}</span>
+      <Icon aria-hidden className={large ? "h-[18px] w-[18px]" : "h-3.5 w-3.5"} strokeWidth={2.25} />
       {STATUS_LABELS[status]}
     </span>
   );
 }
 
+/** Permit type: neutral, identified by icon + name (colour is reserved for status). */
 export function TypeBadge({ type, short }: { type: string; short?: boolean }) {
   const def = getPermitType(type);
+  const Icon = typeIcon(type);
   return (
-    <span className={`inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-bold ring-1 ring-inset ${def?.badgeClass ?? "bg-slate-100 ring-slate-300"}`}>
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-ground px-2.5 py-0.5 text-[13px] font-semibold text-ink-2">
+      <Icon aria-hidden className="h-3.5 w-3.5" strokeWidth={2.25} />
       {short ? def?.shortLabel : def?.label ?? type}
     </span>
   );

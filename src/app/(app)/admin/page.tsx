@@ -13,7 +13,7 @@ export default async function AdminPage() {
   const data = await adminOverview();
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-black">Admin</h1>
+      <h1 className="text-2xl font-semibold">Admin</h1>
       <AdminPanel data={data} currentUserId={user.id} demoMode={process.env.DEMO_MODE === "true"} />
     </div>
   );

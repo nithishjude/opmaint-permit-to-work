@@ -70,17 +70,17 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) 
       <div className="relative">
         <canvas
           ref={canvasRef}
-          className="h-40 w-full touch-none rounded-lg border-2 border-dashed border-slate-400 bg-white"
+          className="h-40 w-full touch-none rounded-sm border border-dashed border-ink-faint bg-white"
           onPointerDown={start}
           onPointerMove={move}
           onPointerUp={end}
           onPointerLeave={end}
           aria-label="Signature pad — draw your signature"
         />
-        {empty && <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-slate-400">Sign here</span>}
-        <span className="pointer-events-none absolute bottom-8 left-4 right-4 border-b border-slate-300" aria-hidden />
+        {empty && <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-ink-faint">Sign here</span>}
+        <span className="pointer-events-none absolute bottom-8 left-4 right-4 border-b border-line-strong" aria-hidden />
       </div>
-      <button type="button" className="btn-ghost mt-1" onClick={clear} disabled={empty}>
+      <button type="button" className="btn-text mt-1" onClick={clear} disabled={empty}>
         Clear signature
       </button>
     </div>

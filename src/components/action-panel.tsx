@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { CircleAlert, CircleCheck, OctagonPause, Pencil, Play, Send, ShieldCheck, Signature, Ban, TriangleAlert } from "lucide-react";
 import type { PermitAction } from "@/domain/permissions";
 import { useMutation } from "./use-mutation";
 
@@ -14,7 +15,7 @@ type FormKind = "SUSPEND" | "RESUME" | "CANCEL" | "CLOSE" | "VERIFY" | "ACTIVATE
 const VERIFY_CHECKS = [
   "Area is clean — no debris, offcuts, rags or waste left behind",
   "Tools, equipment and temporary materials removed",
-  "Isolations, locks, blinds removed or formally handed back",
+  "Isolations, locks and blinds removed or formally handed back",
   "All personnel out of the area and accounted for",
   "Equipment safe to return to operations",
 ];
@@ -52,14 +53,15 @@ export function ActionPanel({
 
   const lifecycle = (["SUBMIT", "ACTIVATE", "SUSPEND", "RESUME", "CLOSE", "VERIFY", "CANCEL", "EDIT_DRAFT", "APPROVE"] as const).some(can);
   if (!lifecycle && !activateBlocker) {
-    return <p className="text-sm text-slate-600">No actions available to you on this permit.</p>;
+    return <p className="text-[15px] text-ink-muted">Nothing for you to do on this permit right now.</p>;
   }
 
   return (
     <div className="space-y-3">
       {error && (
-        <div role="alert" className="rounded-lg bg-red-50 p-3 text-sm font-semibold text-red-900 ring-1 ring-red-300">
-          {error}
+        <div role="alert" className="callout-critical">
+          <CircleAlert aria-hidden />
+          <p className="text-[15px] font-semibold">{error}</p>
         </div>
       )}
 
@@ -67,17 +69,18 @@ export function ActionPanel({
       {can("SUSPEND") && (
         <div>
           <button type="button" className="btn-stop min-h-[64px] w-full text-lg" onClick={() => toggle("SUSPEND")} aria-expanded={open === "SUSPEND"}>
-            ■ STOP WORK — suspend permit
+            <OctagonPause aria-hidden className="!h-6 !w-6" />
+            Stop work
           </button>
           {open === "SUSPEND" && (
             <ReasonForm
               label="Why is work being stopped?"
               placeholder="e.g. Gas alarm GD-14, shift handover, wind picked up…"
-              quick={["Gas alarm in area", "Shift handover", "Emergency / plant upset", "Unsafe act observed", "Weather"]}
+              quick={["Gas alarm in area", "Shift handover", "Plant emergency", "Unsafe act observed", "Weather"]}
               text={text}
               setText={setText}
               busy={busy}
-              submitLabel="Confirm STOP WORK"
+              submitLabel="Confirm stop work"
               submitClass="btn-stop"
               onSubmit={() => transition("SUSPEND", { comment: text })}
             />
@@ -87,12 +90,13 @@ export function ActionPanel({
 
       {can("ACTIVATE") && (
         <div>
-          <button type="button" className="btn-go min-h-[64px] w-full text-lg" onClick={() => toggle("ACTIVATE")}>
-            ▶ Start work (activate)
+          <button type="button" className="btn-go min-h-[64px] w-full text-lg" onClick={() => toggle("ACTIVATE")} aria-expanded={open === "ACTIVATE"}>
+            <Play aria-hidden className="!h-6 !w-6" />
+            Start work
           </button>
           {open === "ACTIVATE" && (
-            <div className="mt-2 space-y-2 rounded-lg bg-green-50 p-3 ring-1 ring-green-300">
-              <p className="text-sm font-semibold text-green-950">Confirm: crew briefed on hazards and precautions, PPE on, permit displayed at the job site.</p>
+            <div className="callout-good mt-3 flex-col">
+              <p className="text-[15px]">Confirm the crew is briefed on the hazards and precautions, PPE is on, and the permit is displayed at the job.</p>
               <button type="button" className="btn-go w-full" disabled={busy} onClick={() => transition("ACTIVATE")}>
                 {busy ? "Starting…" : "Confirm — work starts now"}
               </button>
@@ -101,16 +105,27 @@ export function ActionPanel({
         </div>
       )}
       {!can("ACTIVATE") && activateBlocker && (
-        <div className="rounded-lg border-2 border-amber-500 bg-amber-50 p-3">
-          <p className="font-bold text-amber-950">Work can&apos;t start yet</p>
-          <p className="mt-1 text-sm text-amber-950">{activateBlocker}</p>
+        <div className="callout-warning">
+          <TriangleAlert aria-hidden />
+          <div>
+            <p className="font-semibold">Work can&apos;t start yet</p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[15px] text-ink-2">
+              {activateBlocker
+                .split(/(?<=\.)\s+/)
+                .filter(Boolean)
+                .map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+            </ul>
+          </div>
         </div>
       )}
 
       {can("RESUME") && (
         <div>
-          <button type="button" className="btn-go w-full" onClick={() => toggle("RESUME")}>
-            ▶ Resume work
+          <button type="button" className="btn-go w-full" onClick={() => toggle("RESUME")} aria-expanded={open === "RESUME"}>
+            <Play aria-hidden />
+            Resume work
           </button>
           {open === "RESUME" && (
             <ReasonForm
@@ -128,38 +143,43 @@ export function ActionPanel({
       )}
 
       {can("SUBMIT") && (
-        <button type="button" className="btn-go w-full" disabled={busy} onClick={() => transition("SUBMIT")}>
+        <button type="button" className="btn-primary w-full" disabled={busy} onClick={() => transition("SUBMIT")}>
+          <Send aria-hidden />
           Submit for approval
         </button>
       )}
 
       {can("EDIT_DRAFT") && (
         <Link href={`/permits/${permitId}/edit`} className="btn-secondary w-full">
-          ✎ Continue editing draft
+          <Pencil aria-hidden />
+          Continue editing draft
         </Link>
       )}
 
       {(can("APPROVE") || can("REJECT")) && (
         <Link href={`/permits/${permitId}/approve`} className="btn-primary min-h-[56px] w-full text-lg">
-          Review & sign approval →
+          <Signature aria-hidden />
+          Review & sign
         </Link>
       )}
 
       {can("CLOSE") && (
         <div>
-          <button type="button" className="btn-primary w-full" onClick={() => toggle("CLOSE")}>
-            ✓ Work complete — close permit
+          <button type="button" className="btn-secondary w-full" onClick={() => toggle("CLOSE")} aria-expanded={open === "CLOSE"}>
+            <CircleCheck aria-hidden />
+            Work complete — close permit
           </button>
           {open === "CLOSE" && (
-            <div className="mt-2 space-y-2 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-300">
+            <div className="mt-3 space-y-3">
               {peopleInside.length > 0 && (
-                <p className="rounded bg-red-100 p-2 text-sm font-bold text-red-900">
-                  Still logged inside: {peopleInside.join(", ")}. Record their exit before closing.
-                </p>
+                <div className="callout-critical">
+                  <CircleAlert aria-hidden />
+                  <p className="text-[15px] font-semibold">Still logged inside: {peopleInside.join(", ")}. Record their exit before closing.</p>
+                </div>
               )}
               <ReasonForm
                 label="Completion notes"
-                placeholder="What was done, what's left, condition the area was left in, isolations handed back…"
+                placeholder="What was done, what's left, the state the area was left in, isolations handed back…"
                 text={text}
                 setText={setText}
                 busy={busy}
@@ -174,16 +194,17 @@ export function ActionPanel({
 
       {can("VERIFY") && (
         <div>
-          <button type="button" className="btn-primary w-full" onClick={() => toggle("VERIFY")}>
+          <button type="button" className="btn-primary w-full" onClick={() => toggle("VERIFY")} aria-expanded={open === "VERIFY"}>
+            <ShieldCheck aria-hidden />
             Verify area & close out
           </button>
           {open === "VERIFY" && (
-            <div className="mt-2 space-y-2 rounded-lg bg-slate-50 p-3 ring-1 ring-slate-300">
-              <p className="text-sm font-bold">Site inspection — confirm each item:</p>
+            <div className="mt-3 space-y-2">
+              <p className="text-[15px] font-semibold">Site inspection — confirm each item</p>
               {VERIFY_CHECKS.map((c, i) => (
-                <label key={c} className="flex min-h-[48px] cursor-pointer items-center gap-3 rounded-lg border-2 border-slate-200 bg-white px-3 has-[:checked]:border-green-700">
-                  <input type="checkbox" className="h-6 w-6 accent-green-700" checked={checks[i]} onChange={(e) => setChecks(checks.map((x, j) => (j === i ? e.target.checked : x)))} />
-                  <span className="text-sm">{c}</span>
+                <label key={c} className="check-row">
+                  <input type="checkbox" className="check-box" checked={checks[i]} onChange={(e) => setChecks(checks.map((x, j) => (j === i ? e.target.checked : x)))} />
+                  <span className="text-[15px] leading-snug">{c}</span>
                 </label>
               ))}
               <ReasonForm
@@ -203,9 +224,10 @@ export function ActionPanel({
       )}
 
       {can("CANCEL") && (
-        <div>
-          <button type="button" className="btn-ghost w-full text-red-800" onClick={() => toggle("CANCEL")}>
-            Cancel this permit…
+        <div className="pt-1">
+          <button type="button" className="btn-text text-critical decoration-critical-line hover:text-critical" onClick={() => toggle("CANCEL")} aria-expanded={open === "CANCEL"}>
+            <Ban aria-hidden />
+            Cancel this permit
           </button>
           {open === "CANCEL" && (
             <ReasonForm
@@ -249,23 +271,31 @@ function ReasonForm({
 }) {
   return (
     <form
-      className="mt-2 space-y-2"
+      className="mt-3 space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit();
       }}
     >
-      <label className="label">{label}</label>
+      <label className="label !mb-0">{label}</label>
       {quick.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {quick.map((q) => (
-            <button key={q} type="button" className="min-h-[44px] rounded-full border-2 border-slate-300 bg-white px-3 text-sm font-semibold" onClick={() => setText(q)}>
+            <button
+              key={q}
+              type="button"
+              aria-pressed={text === q}
+              className={`min-h-[44px] rounded-full border px-3.5 text-[15px] font-medium transition-colors duration-out ease-ui ${
+                text === q ? "border-ink bg-ink text-white" : "border-line-strong bg-white text-ink-2 hover:border-ink-muted"
+              }`}
+              onClick={() => setText(q)}
+            >
               {q}
             </button>
           ))}
         </div>
       )}
-      <textarea className="input py-2" rows={3} required value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder} />
+      <textarea className="input py-2.5" rows={3} required value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder} />
       <button className={`${submitClass} w-full`} disabled={busy || disabled || !text.trim()}>
         {busy ? "Saving…" : submitLabel}
       </button>

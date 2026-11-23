@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleCheck, CircleX, Signature } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
@@ -33,13 +34,22 @@ export function ApprovalForm({ permitId, slotLabel, checklist }: { permitId: str
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-2" role="tablist">
-        <button type="button" role="tab" aria-selected={mode === "approve"} onClick={() => setMode("approve")} className={`btn border-2 ${mode === "approve" ? "border-green-700 bg-green-700 text-white" : "border-slate-300 bg-white"}`}>
-          Approve
-        </button>
-        <button type="button" role="tab" aria-selected={mode === "reject"} onClick={() => setMode("reject")} className={`btn border-2 ${mode === "reject" ? "border-red-700 bg-red-700 text-white" : "border-slate-300 bg-white"}`}>
-          Reject
-        </button>
+      <div className="grid grid-cols-2 gap-1 rounded-sm border border-line-strong bg-ground p-1" role="tablist" aria-label="Decision">
+        {(["approve", "reject"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={mode === m}
+            onClick={() => setMode(m)}
+            className={`flex min-h-[44px] items-center justify-center gap-2 rounded-[6px] text-[15px] font-semibold transition-colors duration-out ease-ui ${
+              mode === m ? "bg-white text-ink shadow-sm ring-1 ring-line-strong" : "text-ink-muted hover:text-ink"
+            }`}
+          >
+            {m === "approve" ? <CircleCheck aria-hidden className={`h-[18px] w-[18px] ${mode === m ? "text-good" : ""}`} /> : <CircleX aria-hidden className={`h-[18px] w-[18px] ${mode === m ? "text-critical" : ""}`} />}
+            {m === "approve" ? "Approve" : "Reject"}
+          </button>
+        ))}
       </div>
 
       {mode === "approve" ? (
@@ -53,9 +63,9 @@ export function ApprovalForm({ permitId, slotLabel, checklist }: { permitId: str
           <fieldset className="space-y-2">
             <legend className="label">I have personally checked:</legend>
             {checklist.map((c, i) => (
-              <label key={c} className="flex min-h-[52px] cursor-pointer items-center gap-3 rounded-lg border-2 border-slate-200 bg-white px-3 py-2 has-[:checked]:border-green-700 has-[:checked]:bg-green-50">
-                <input type="checkbox" className="h-6 w-6 shrink-0 accent-green-700" checked={checked[i]} onChange={(e) => setChecked(checked.map((x, j) => (j === i ? e.target.checked : x)))} />
-                <span className="text-sm">{c}</span>
+              <label key={c} className="check-row">
+                <input type="checkbox" className="check-box" checked={checked[i]} onChange={(e) => setChecked(checked.map((x, j) => (j === i ? e.target.checked : x)))} />
+                <span className="text-[15px] leading-snug">{c}</span>
               </label>
             ))}
           </fieldset>
@@ -68,10 +78,11 @@ export function ApprovalForm({ permitId, slotLabel, checklist }: { permitId: str
             <SignaturePad onChange={setSignature} />
           </div>
           {error && <p className="field-error" role="alert">{error}</p>}
-          <button className="btn-go min-h-[56px] w-full text-lg" disabled={busy || !allChecked || !signature}>
+          <button className="btn-primary min-h-[56px] w-full text-lg" disabled={busy || !allChecked || !signature}>
+            <Signature aria-hidden />
             {busy ? "Signing…" : "Approve & sign"}
           </button>
-          {(!allChecked || !signature) && <p className="text-center text-sm text-slate-600">Tick every check and sign to approve.</p>}
+          {(!allChecked || !signature) && <p className="text-center text-[14px] text-ink-muted">Tick every check and sign to approve.</p>}
         </form>
       ) : (
         <form
@@ -83,7 +94,7 @@ export function ApprovalForm({ permitId, slotLabel, checklist }: { permitId: str
         >
           <div>
             <label className="label" htmlFor="reject-reason">
-              Reason for rejection <span className="text-red-700">*</span>
+              Reason for rejection <span className="text-critical">*</span>
             </label>
             <textarea id="reject-reason" className="input py-2" rows={4} required minLength={5} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="What must change before this could be approved? The requester will need to raise a new permit." />
           </div>

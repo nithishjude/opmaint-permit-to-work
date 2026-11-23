@@ -9,7 +9,7 @@ import { EXPIRING_SOON_MS } from "@/domain/guards";
  * is enforced on the server. When it hits zero it asks the page to refresh
  * so the server can show the permit as EXPIRED.
  */
-export function Countdown({ until, label = "left", size = "sm", refreshOnZero = true }: { until: string | Date; label?: string; size?: "sm" | "lg"; refreshOnZero?: boolean }) {
+export function Countdown({ until, label = "left", size = "sm", refreshOnZero = true, neutral = false }: { until: string | Date; label?: string; size?: "sm" | "lg"; refreshOnZero?: boolean; neutral?: boolean }) {
   const target = new Date(until).getTime();
   const [now, setNow] = useState<number | null>(null);
 
@@ -29,13 +29,13 @@ export function Countdown({ until, label = "left", size = "sm", refreshOnZero = 
     }
   }, [left, refreshOnZero]);
 
-  if (left === null) return <span className={size === "lg" ? "text-3xl font-black" : "font-semibold"}>…</span>;
+  if (left === null) return <span className={size === "lg" ? "font-mono text-4xl font-semibold" : "font-mono font-semibold"}>…</span>;
 
-  const tone = left <= 0 ? "text-red-700" : left <= 30 * 60_000 ? "text-red-700" : left <= EXPIRING_SOON_MS ? "text-amber-700" : "text-green-800";
+  const tone = neutral ? "text-ink-2" : left <= 30 * 60_000 ? "text-critical" : left <= EXPIRING_SOON_MS ? "text-warning" : "text-good";
   const text = left <= 0 ? "Expired" : `${formatDuration(left)} ${label}`;
 
   return (
-    <span className={`tabular-nums ${tone} ${size === "lg" ? "text-3xl font-black sm:text-4xl" : "font-bold"}`} role="timer" aria-live="off">
+    <span className={`font-mono tabular-nums tracking-tight ${tone} ${size === "lg" ? "text-[32px] font-semibold leading-none sm:text-[40px]" : "text-[14px] font-semibold"}`} role="timer" aria-live="off">
       {text}
     </span>
   );

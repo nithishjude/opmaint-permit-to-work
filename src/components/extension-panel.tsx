@@ -1,5 +1,6 @@
 "use client";
 
+import { TimerReset } from "lucide-react";
 import { useState } from "react";
 import { MAX_EXTENSION_HOURS, MAX_EXTENSIONS } from "@/domain/guards";
 import { formatDateTime } from "@/lib/time";
@@ -25,16 +26,16 @@ export function ExtensionPanel({ permitId, extensions, canRequest, canDecide, ex
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-slate-600">
-        Valid until <strong>{formatDateTime(validUntil)}</strong>. {extensionCount}/{MAX_EXTENSIONS} extensions used; each up to {MAX_EXTENSION_HOURS} h, approved by a safety officer.
+      <p className="text-[15px] text-ink-muted">
+        Valid until <strong className="font-mono font-semibold text-ink">{formatDateTime(validUntil)}</strong>. {extensionCount}/{MAX_EXTENSIONS} extensions used; each up to {MAX_EXTENSION_HOURS} h, approved by a safety officer.
       </p>
 
       {pending && (
-        <div className="rounded-lg bg-blue-50 p-3 ring-1 ring-blue-300">
-          <p className="font-bold text-blue-950">
-            +{pending.hours} h requested by {pending.requestedBy.name}
+        <div className="callout-info flex-col !gap-1">
+          <p className="flex items-center gap-2 font-semibold">
+            <TimerReset aria-hidden className="h-5 w-5 text-info" />+{pending.hours} h requested by {pending.requestedBy.name}
           </p>
-          <p className="text-sm text-blue-950">{pending.reason}</p>
+          <p className="text-[15px] text-ink-2">{pending.reason}</p>
           {canDecide && (
             <div className="mt-2 space-y-2">
               <input className="input" placeholder="Note (required to refuse)" value={note} onChange={(e) => setNote(e.target.value)} />
@@ -60,16 +61,24 @@ export function ExtensionPanel({ permitId, extensions, canRequest, canDecide, ex
           }}
         >
           <label className="label" htmlFor="ext-hours">Request more time</label>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-4 gap-1 rounded-sm border border-line-strong bg-ground p-1" role="radiogroup" aria-label="Extra hours">
             {Array.from({ length: MAX_EXTENSION_HOURS }, (_, i) => i + 1).map((h) => (
-              <button key={h} type="button" onClick={() => setHours(h)} className={`btn flex-1 border-2 ${hours === h ? "border-slate-900 bg-slate-900 text-white" : "border-slate-300 bg-white"}`}>
+              <button
+                key={h}
+                type="button"
+                role="radio"
+                aria-checked={hours === h}
+                onClick={() => setHours(h)}
+                className={`min-h-[44px] rounded-[6px] font-mono text-[15px] font-semibold transition-colors duration-out ease-ui ${hours === h ? "bg-white text-ink shadow-sm ring-1 ring-line-strong" : "text-ink-muted hover:text-ink"}`}
+              >
                 +{h} h
               </button>
             ))}
           </div>
-          <textarea className="input py-2" rows={2} placeholder="Why is more time needed?" value={reason} onChange={(e) => setReason(e.target.value)} />
-          <button className="btn-primary w-full" disabled={busy || reason.trim().length < 5}>
-            Request extension
+          <textarea className="input py-2.5" rows={2} placeholder="Why is more time needed?" value={reason} onChange={(e) => setReason(e.target.value)} />
+          <button className="btn-secondary w-full" disabled={busy || reason.trim().length < 5}>
+            <TimerReset aria-hidden />
+            Request +{hours} h
           </button>
         </form>
       )}
@@ -80,7 +89,7 @@ export function ExtensionPanel({ permitId, extensions, canRequest, canDecide, ex
           {extensions
             .filter((e) => e.status !== "PENDING")
             .map((e) => (
-              <li key={e.id} className="text-slate-700">
+              <li key={e.id} className="text-ink-2">
                 +{e.hours} h · <strong>{e.status.toLowerCase()}</strong> {e.decidedBy ? `by ${e.decidedBy.name}` : ""} {e.decisionNote ? `— ${e.decisionNote}` : ""}
               </li>
             ))}

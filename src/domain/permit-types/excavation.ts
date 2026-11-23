@@ -7,7 +7,6 @@ export const excavation: PermitTypeDefinition = {
   label: "Excavation",
   shortLabel: "Excav.",
   description: "Digging, trenching or ground penetration where buried services may exist.",
-  badgeClass: "bg-amber-100 text-amber-950 ring-amber-500",
   maxDurationHours: 12,
   requiredApprovals: ["AREA_OWNER", "SAFETY_OFFICER"],
   fields: [

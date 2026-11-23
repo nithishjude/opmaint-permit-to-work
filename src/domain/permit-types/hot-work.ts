@@ -5,7 +5,6 @@ export const hotWork: PermitTypeDefinition = {
   label: "Hot Work",
   shortLabel: "Hot",
   description: "Welding, grinding, cutting, soldering — any open flame or spark source.",
-  badgeClass: "bg-orange-100 text-orange-900 ring-orange-300",
   maxDurationHours: 8,
   requiredApprovals: ["AREA_OWNER", "SAFETY_OFFICER"],
   conflictsWith: ["CONFINED_SPACE"],

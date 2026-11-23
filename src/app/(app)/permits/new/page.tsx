@@ -11,7 +11,7 @@ export default async function NewPermitPage() {
   const plants = await getReferenceData();
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-2xl font-black">Raise a permit</h1>
+      <h1 className="text-2xl font-semibold">Raise a permit</h1>
       <PermitForm plants={plants} />
     </div>
   );

@@ -1,5 +1,22 @@
 // The audit log as a readable timeline — what an investigator reads after an incident.
 
+import {
+  ArrowRight,
+  BadgeCheck,
+  Ban,
+  CheckCheck,
+  CircleX,
+  FilePlus,
+  OctagonPause,
+  PencilLine,
+  Play,
+  Send,
+  ShieldCheck,
+  TimerOff,
+  TimerReset,
+  RefreshCw,
+  type LucideIcon,
+} from "lucide-react";
 import { ROLE_LABELS, STATUS_LABELS, type PermitStatus, type Role } from "@/domain/enums";
 import { formatDateTime } from "@/lib/time";
 
@@ -14,29 +31,38 @@ interface Entry {
   actor: { name: string; role: string } | null;
 }
 
-const ACTION: Record<string, { label: string; dot: string }> = {
-  CREATED: { label: "Raised the permit", dot: "bg-slate-400" },
-  SUBMITTED: { label: "Submitted for approval", dot: "bg-amber-500" },
-  APPROVED: { label: "Approved", dot: "bg-blue-600" },
-  REJECTED: { label: "Rejected", dot: "bg-red-700" },
-  STATUS_CHANGED: { label: "Status changed", dot: "bg-slate-600" },
-  FIELD_CHANGED: { label: "Changed a field", dot: "bg-violet-600" },
-  ACTIVATED: { label: "Started work (activated)", dot: "bg-green-700" },
-  SUSPENDED: { label: "STOPPED WORK (suspended)", dot: "bg-red-700" },
-  AUTO_SUSPENDED: { label: "Work auto-suspended — unsafe reading", dot: "bg-red-700" },
-  RESUMED: { label: "Resumed work", dot: "bg-green-700" },
-  CLOSED: { label: "Closed — work complete", dot: "bg-teal-600" },
-  VERIFIED: { label: "Verified area & closed out", dot: "bg-slate-900" },
-  CANCELLED: { label: "Cancelled", dot: "bg-slate-500" },
-  EXPIRED: { label: "Permit expired", dot: "bg-slate-700" },
-  EXTENSION_REQUESTED: { label: "Requested an extension", dot: "bg-blue-400" },
-  EXTENSION_APPROVED: { label: "Approved extension", dot: "bg-blue-600" },
-  EXTENSION_REJECTED: { label: "Refused extension", dot: "bg-red-600" },
+type Tone = "neutral" | "good" | "critical" | "info" | "warning";
+const ACTION: Record<string, { label: string; icon: LucideIcon; tone: Tone }> = {
+  CREATED: { label: "Raised the permit", icon: FilePlus, tone: "neutral" },
+  SUBMITTED: { label: "Submitted for approval", icon: Send, tone: "warning" },
+  APPROVED: { label: "Signed — approved", icon: BadgeCheck, tone: "info" },
+  REJECTED: { label: "Rejected", icon: CircleX, tone: "critical" },
+  STATUS_CHANGED: { label: "Status changed", icon: RefreshCw, tone: "neutral" },
+  FIELD_CHANGED: { label: "Changed a field", icon: PencilLine, tone: "neutral" },
+  ACTIVATED: { label: "Started work", icon: Play, tone: "good" },
+  SUSPENDED: { label: "Stopped work", icon: OctagonPause, tone: "critical" },
+  AUTO_SUSPENDED: { label: "Work stopped automatically — unsafe reading", icon: OctagonPause, tone: "critical" },
+  RESUMED: { label: "Resumed work", icon: Play, tone: "good" },
+  CLOSED: { label: "Closed — work complete", icon: CheckCheck, tone: "info" },
+  VERIFIED: { label: "Verified the area and closed out", icon: ShieldCheck, tone: "good" },
+  CANCELLED: { label: "Cancelled", icon: Ban, tone: "neutral" },
+  EXPIRED: { label: "Permit expired", icon: TimerOff, tone: "neutral" },
+  EXTENSION_REQUESTED: { label: "Requested an extension", icon: TimerReset, tone: "info" },
+  EXTENSION_APPROVED: { label: "Approved the extension", icon: TimerReset, tone: "good" },
+  EXTENSION_REJECTED: { label: "Refused the extension", icon: TimerReset, tone: "critical" },
+};
+const DOT: Record<Tone, string> = {
+  neutral: "bg-white text-ink-muted border-line-strong",
+  good: "bg-good-soft text-good border-good-line",
+  critical: "bg-critical-soft text-critical border-critical-line",
+  info: "bg-info-soft text-info border-info-line",
+  warning: "bg-warning-soft text-warning border-warning-line",
 };
 
 function pretty(field: string | null, v: string | null): string {
   if (v === null) return "—";
   if (field === "status" && v in STATUS_LABELS) return STATUS_LABELS[v as PermitStatus];
+  if (field?.startsWith("approval.")) return v.charAt(0) + v.slice(1).toLowerCase();
   if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return formatDateTime(v);
   return v;
 }
@@ -50,31 +76,38 @@ function fieldLabel(field: string | null): string | null {
 
 export function AuditTimeline({ entries }: { entries: Entry[] }) {
   return (
-    <ol className="relative space-y-4 border-l-2 border-slate-200 pl-6">
-      {entries.map((e) => {
-        const a = ACTION[e.action] ?? { label: e.action, dot: "bg-slate-400" };
+    <ol className="relative">
+      {entries.map((e, i) => {
+        const a = ACTION[e.action] ?? { label: e.action, icon: RefreshCw, tone: "neutral" as Tone };
+        const Icon = a.icon;
         const label = fieldLabel(e.field);
         const showChange = e.fromValue !== null || (e.toValue !== null && e.action !== "CREATED");
         return (
-          <li key={e.id} className="relative">
-            <span className={`absolute -left-[31px] top-1 h-4 w-4 rounded-full ring-4 ring-white ${a.dot}`} aria-hidden />
-            <div className="flex flex-wrap items-baseline gap-x-2">
-              <span className="font-bold">{a.label}</span>
-              <span className="text-sm text-slate-600">
-                by {e.actor ? `${e.actor.name} (${ROLE_LABELS[e.actor.role as Role]})` : "System"}
-              </span>
+          <li key={e.id} className="relative flex gap-3.5 pb-5 last:pb-0">
+            {i < entries.length - 1 && <span aria-hidden className="absolute bottom-0 left-[15px] top-8 w-px bg-line-strong" />}
+            <span className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border ${DOT[a.tone]}`}>
+              <Icon aria-hidden className="h-4 w-4" strokeWidth={2.25} />
+            </span>
+            <div className="min-w-0 flex-1 pt-1">
+              <div className="flex flex-wrap items-baseline gap-x-2">
+                <span className="font-semibold">{a.label}</span>
+                <span className="text-[14px] text-ink-muted">
+                  {e.actor ? `${e.actor.name} · ${ROLE_LABELS[e.actor.role as Role]}` : "System"}
+                </span>
+              </div>
+              <time className="block font-mono text-[13px] text-ink-muted" dateTime={e.createdAt.toISOString()}>
+                {formatDateTime(e.createdAt)} IST
+              </time>
+              {showChange && (
+                <p className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[14px]">
+                  {label && <span className="font-semibold">{label}</span>}
+                  <span className="rounded-sm bg-ground px-1.5 py-0.5 text-ink-muted line-through decoration-ink-faint">{pretty(e.field, e.fromValue)}</span>
+                  <ArrowRight aria-label="changed to" className="h-3.5 w-3.5 text-ink-faint" />
+                  <span className="rounded-sm bg-ink px-1.5 py-0.5 font-semibold text-white">{pretty(e.field, e.toValue)}</span>
+                </p>
+              )}
+              {e.comment && <p className="mt-2 whitespace-pre-line border-l-2 border-line-strong pl-3 text-[15px] text-ink-2">{e.comment}</p>}
             </div>
-            <time className="block font-mono text-xs text-slate-500" dateTime={e.createdAt.toISOString()}>
-              {formatDateTime(e.createdAt)} IST
-            </time>
-            {showChange && (
-              <p className="mt-1 text-sm">
-                {label && <span className="font-semibold">{label}: </span>}
-                <span className="rounded bg-slate-100 px-1 line-through decoration-slate-400">{pretty(e.field, e.fromValue)}</span> →{" "}
-                <span className="rounded bg-slate-900 px-1 font-semibold text-white">{pretty(e.field, e.toValue)}</span>
-              </p>
-            )}
-            {e.comment && <p className="mt-1 whitespace-pre-line rounded-lg bg-slate-50 p-2 text-sm text-slate-800 ring-1 ring-slate-200">“{e.comment}”</p>}
           </li>
         );
       })}

@@ -5,7 +5,6 @@ export const electricalLoto: PermitTypeDefinition = {
   label: "Electrical / Isolation (LOTO)",
   shortLabel: "LOTO",
   description: "Work on electrical or energised equipment requiring lockout-tagout isolation.",
-  badgeClass: "bg-yellow-100 text-yellow-900 ring-yellow-400",
   maxDurationHours: 12,
   requiredApprovals: ["AREA_OWNER", "SAFETY_OFFICER"],
   fields: [

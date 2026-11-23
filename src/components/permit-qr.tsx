@@ -20,7 +20,7 @@ export async function PermitQr({ permitId, number }: { permitId: string; number:
   return (
     <figure className="text-center">
       <div className="mx-auto w-40 [&>svg]:h-auto [&>svg]:w-full" role="img" aria-label={`QR code for ${number}`} dangerouslySetInnerHTML={{ __html: svg }} />
-      <figcaption className="mt-1 text-xs text-slate-600">
+      <figcaption className="mt-1 text-[13px] text-ink-muted">
         Scan for live status ·{" "}
         <a href={url} className="underline" target="_blank" rel="noreferrer">
           open

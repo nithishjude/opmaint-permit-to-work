@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, CircleCheck, CircleDashed, Clock, HardHat, MapPin, ShieldAlert, TriangleAlert, UserRound } from "lucide-react";
 import { requirePageUser } from "@/server/auth";
 import { getPermitDetail } from "@/server/permits/queries";
 import { asPrecautions, asTypeData } from "@/server/permits/repository";
@@ -18,6 +19,7 @@ import { ExtensionPanel } from "@/components/extension-panel";
 import { AuditTimeline } from "@/components/audit-timeline";
 import { ApprovalTrail } from "@/components/approval-trail";
 import { PermitQr } from "@/components/permit-qr";
+import { typeIcon } from "@/components/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -37,114 +39,177 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: permit.number };
 }
 
-function Section({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
+function Panel({ title, children, aside }: { title: string; children: React.ReactNode; aside?: React.ReactNode }) {
   return (
-    <section className={`card p-4 sm:p-5 ${className}`}>
-      <h2 className="mb-3 text-lg font-black">{title}</h2>
+    <section className="card p-4 sm:p-6">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h2 className="panel-title">{title}</h2>
+        {aside}
+      </div>
       {children}
     </section>
   );
 }
+
+/** Left rule on the hero = the permit's state, readable from arm's length. */
+const HERO_RULE: Record<string, string> = {
+  ACTIVE: "border-l-good",
+  SUSPENDED: "border-l-critical",
+  APPROVED: "border-l-info",
+  PENDING_APPROVAL: "border-l-warning-fill",
+  CLOSED: "border-l-info",
+  CLOSED_VERIFIED: "border-l-ink",
+  REJECTED: "border-l-critical",
+};
 
 export default async function PermitDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ submitted?: string }> }) {
   const { id } = await params;
   const { submitted } = await searchParams;
   const { permit, actions, blockers, conflicts, status } = await load(id);
   const def = requirePermitType(permit.type);
+  const TypeIcon = typeIcon(permit.type);
   const typeData = asTypeData(permit.typeData);
   const precautions = asPrecautions(permit.precautions);
   const inside = def.hasEntryRegister ? peopleInside(permit.workLogs) : [];
   const live = status === "ACTIVE" || status === "SUSPENDED" || status === "APPROVED";
   const showExtensions = permit.extensions.length > 0 || actions.includes("REQUEST_EXTENSION");
-
-  const heroTone =
-    status === "ACTIVE" ? "border-green-700" : status === "SUSPENDED" ? "border-red-700 bg-red-50" : status === "EXPIRED" || status === "REJECTED" || status === "CANCELLED" ? "border-slate-400 bg-slate-50" : "border-slate-300";
+  const extended = permit.validUntil.getTime() !== permit.plannedEnd.getTime();
 
   return (
-    <div className="space-y-4">
-      <Link href="/permits" className="text-sm font-semibold text-slate-600 hover:underline">
-        ← All permits
+    <div className="space-y-5">
+      <Link href="/permits" className="btn-text -ml-2">
+        <ArrowLeft aria-hidden />
+        All permits
       </Link>
 
       {submitted && (
-        <div role="status" className="rounded-lg bg-green-50 p-3 font-semibold text-green-900 ring-1 ring-green-300">
-          ✓ Submitted. The approvers have been notified.
+        <div role="status" className="callout-good">
+          <CircleCheck aria-hidden />
+          <div>
+            <p className="font-semibold">Submitted for approval</p>
+            <p className="text-[15px] text-ink-2">The area owner and safety officers have been notified.</p>
+          </div>
         </div>
       )}
 
-      {/* HERO — readable at arm's length: what, where, is it valid right now */}
-      <header className={`card border-l-8 p-4 sm:p-6 ${heroTone}`}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0 flex-1 space-y-2">
+      {/* HERO — what, where, and is it valid right now */}
+      <header className={`card border-l-[6px] ${HERO_RULE[status] ?? "border-l-line-strong"} p-5 sm:p-6`}>
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-lg font-black">{permit.number}</span>
+              <span className="font-mono text-[17px] font-semibold tracking-tight">{permit.number}</span>
               <TypeBadge type={permit.type} />
             </div>
-            <StatusBadge status={status} large />
-            <h1 className="text-xl font-bold leading-snug sm:text-2xl">{permit.workDescription || "Untitled draft"}</h1>
-            <p className="text-base font-semibold text-slate-800">
-              📍 {permit.area.plant.name} › {permit.area.name}
-              {permit.equipment ? ` › ${permit.equipment.tag} (${permit.equipment.name})` : ""}
-              {permit.locationDetail ? <span className="block text-sm font-normal text-slate-600">{permit.locationDetail}</span> : null}
-            </p>
-            <p className="text-sm text-slate-700">
-              🕑 {formatDateTime(permit.plannedStart)} → {formatDateTime(permit.validUntil)} IST
-              {permit.validUntil.getTime() !== permit.plannedEnd.getTime() && <span className="ml-1 font-semibold text-blue-800">(extended)</span>}
-            </p>
-            <p className="text-sm text-slate-700">
-              👷 {permit.contractor || "—"}
-              {permit.crewSize ? ` · crew of ${permit.crewSize}` : ""} · requested by {permit.requester.name}
-            </p>
-            {live && (
-              <div className="pt-1">
-                {status === "APPROVED" && permit.plannedStart > new Date() ? (
-                  <span className="font-semibold text-slate-700">
-                    Can start in <Countdown until={permit.plannedStart} label="" refreshOnZero />
+            <div className="mt-3">
+              <StatusBadge status={status} large />
+            </div>
+            <h1 className="mt-3 flex gap-3 text-[22px] font-semibold leading-snug tracking-tight sm:text-[26px]">
+              <TypeIcon aria-hidden className="mt-1 hidden h-6 w-6 shrink-0 text-ink-muted sm:block" />
+              {permit.workDescription || "Untitled draft"}
+            </h1>
+            <dl className="mt-4 grid gap-2.5 text-[15px] text-ink-2 sm:grid-cols-2">
+              <div className="flex gap-2.5 sm:col-span-2">
+                <dt>
+                  <MapPin aria-label="Location" className="mt-0.5 h-[18px] w-[18px] text-ink-muted" />
+                </dt>
+                <dd>
+                  <span className="font-semibold text-ink">
+                    {permit.area.plant.name} › {permit.area.name}
+                    {permit.equipment ? ` › ${permit.equipment.tag}` : ""}
                   </span>
+                  {permit.equipment && <span className="text-ink-muted"> · {permit.equipment.name}</span>}
+                  {permit.locationDetail && <span className="block text-ink-muted">{permit.locationDetail}</span>}
+                </dd>
+              </div>
+              <div className="flex gap-2.5">
+                <dt>
+                  <Clock aria-label="Window" className="mt-0.5 h-[18px] w-[18px] text-ink-muted" />
+                </dt>
+                <dd className="font-mono text-[14px]">
+                  {formatDateTime(permit.plannedStart)} → {formatDateTime(permit.validUntil)}
+                  {extended && <span className="ml-2 font-sans text-[13px] font-semibold text-info">extended</span>}
+                </dd>
+              </div>
+              <div className="flex gap-2.5">
+                <dt>
+                  <HardHat aria-label="Contractor" className="mt-0.5 h-[18px] w-[18px] text-ink-muted" />
+                </dt>
+                <dd>
+                  {permit.contractor || "—"}
+                  {permit.crewSize ? ` · crew of ${permit.crewSize}` : ""}
+                </dd>
+              </div>
+              <div className="flex gap-2.5">
+                <dt>
+                  <UserRound aria-label="Requested by" className="mt-0.5 h-[18px] w-[18px] text-ink-muted" />
+                </dt>
+                <dd>Requested by {permit.requester.name}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div className="flex w-full flex-col items-start gap-4 sm:w-auto sm:items-end">
+            {live && (
+              <div className="w-full rounded-md bg-ground px-4 py-3 sm:w-auto sm:min-w-[220px] sm:text-right">
+                {status === "APPROVED" && permit.plannedStart > new Date() ? (
+                  <>
+                    <div className="eyebrow">Can start in</div>
+                    <Countdown until={permit.plannedStart} label="" size="lg" refreshOnZero />
+                  </>
                 ) : (
-                  <Countdown until={permit.validUntil} size="lg" />
+                  <>
+                    <div className="eyebrow">{status === "SUSPENDED" ? "Window closes in" : "Valid for"}</div>
+                    <Countdown until={permit.validUntil} label="" size="lg" neutral={status === "SUSPENDED"} />
+                  </>
                 )}
               </div>
             )}
+            <div className="hidden sm:block">{status !== "DRAFT" && <PermitQr permitId={permit.id} number={permit.number} />}</div>
           </div>
-          <div className="hidden sm:block">{status !== "DRAFT" && <PermitQr permitId={permit.id} number={permit.number} />}</div>
         </div>
       </header>
 
       {conflicts.length > 0 && (
-        <div className="rounded-xl border-2 border-red-700 bg-red-50 p-4">
-          <p className="font-black text-red-900">⚠ Simultaneous operations — check before approving or starting</p>
-          <ul className="mt-1 space-y-1 text-sm text-red-950">
-            {conflicts.map((c) => (
-              <li key={c.id}>
-                <Link href={`/permits/${c.id}`} className="font-bold underline">
-                  {c.number}
-                </Link>{" "}
-                <TypeBadge type={c.type} /> {c.workDescription} · {formatDateTime(c.plannedStart)}–{formatDateTime(c.validUntil)}
-              </li>
-            ))}
-          </ul>
+        <div className="callout-critical">
+          <ShieldAlert aria-hidden />
+          <div>
+            <p className="font-semibold">Simultaneous operations — check before approving or starting</p>
+            <ul className="mt-2 space-y-1.5 text-[15px]">
+              {conflicts.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center gap-2">
+                  <Link href={`/permits/${c.id}`} className="link font-mono">
+                    {c.number}
+                  </Link>
+                  <TypeBadge type={c.type} />
+                  <span className="text-ink-2">{c.workDescription}</span>
+                  <span className="font-mono text-[13px] text-ink-muted">
+                    {formatDateTime(c.plannedStart)}–{formatDateTime(c.validUntil)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Actions first on mobile */}
-        <div className="space-y-4 lg:order-2">
-          <Section title="Actions">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        {/* Actions come first on a phone */}
+        <div className="space-y-5 lg:order-2">
+          <Panel title="Actions">
             <ActionPanel permitId={permit.id} actions={actions} activateBlocker={blockers.ACTIVATE} peopleInside={inside} />
             {actions.includes("UPDATE_READINGS") && (
-              <div className="mt-3 border-t border-slate-200 pt-3">
+              <div className="mt-4 border-t border-line pt-4">
                 <ReadingsForm permitId={permit.id} type={permit.type} typeData={typeData} status={status} />
               </div>
             )}
-          </Section>
+          </Panel>
 
-          <Section title="Approvals">
+          <Panel title="Approvals" aside={<span className="meta">{permit.approvals.filter((a) => a.decision === "APPROVED").length} of {permit.approvals.length || def.requiredApprovals.length} signed</span>}>
             <ApprovalTrail approvals={permit.approvals} areaOwnerName={permit.area.owner?.name} />
-          </Section>
+          </Panel>
 
           {showExtensions && (
-            <Section title="Extension">
+            <Panel title="Extension">
               <ExtensionPanel
                 permitId={permit.id}
                 extensions={permit.extensions}
@@ -153,7 +218,7 @@ export default async function PermitDetailPage({ params, searchParams }: { param
                 extensionCount={permit.extensionCount}
                 validUntil={permit.validUntil}
               />
-            </Section>
+            </Panel>
           )}
 
           {status !== "DRAFT" && (
@@ -163,77 +228,82 @@ export default async function PermitDetailPage({ params, searchParams }: { param
           )}
         </div>
 
-        <div className="space-y-4 lg:order-1 lg:col-span-2">
+        <div className="space-y-5 lg:order-1 lg:col-span-2">
           {(status === "ACTIVE" || permit.workLogs.length > 0) && (
-            <Section title={def.hasEntryRegister ? "Entry register & work log" : "Work log"}>
+            <Panel title={def.hasEntryRegister ? "Entry register & work log" : "Work log"}>
               <WorkLogPanel permitId={permit.id} logs={permit.workLogs} canLog={actions.includes("LOG_WORK")} hasEntryRegister={Boolean(def.hasEntryRegister)} peopleInside={inside} />
-            </Section>
+            </Panel>
           )}
 
-          <Section title="Hazards & PPE">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Panel title="Hazards, PPE & precautions">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <div>
-                <h3 className="section-title mb-2">Hazards</h3>
+                <h3 className="eyebrow mb-2">Hazards identified</h3>
                 <ul className="flex flex-wrap gap-2">
                   {permit.hazards.map((h) => (
-                    <li key={h} className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-900">
-                      ⚠ {h}
+                    <li key={h} className="chip border-critical-line bg-critical-soft text-ink">
+                      <TriangleAlert aria-hidden className="h-3.5 w-3.5 text-critical" />
+                      {h}
                     </li>
                   ))}
                 </ul>
               </div>
               <div>
-                <h3 className="section-title mb-2">PPE required</h3>
+                <h3 className="eyebrow mb-2">PPE required</h3>
                 <ul className="flex flex-wrap gap-2">
                   {permit.ppe.map((p) => (
-                    <li key={p} className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-900">
+                    <li key={p} className="chip">
+                      <HardHat aria-hidden className="h-3.5 w-3.5 text-ink-muted" />
                       {p}
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
-            <h3 className="section-title mb-2 mt-5">Precautions</h3>
-            <ul className="space-y-1">
+            <h3 className="eyebrow mb-2 mt-6">Precautions</h3>
+            <ul className="divide-y divide-line rounded-sm border border-line">
               {precautions.map((p) => (
-                <li key={p.id} className="flex gap-2">
-                  <span className={p.checked ? "text-green-700" : "text-slate-400"} aria-label={p.checked ? "confirmed" : "not confirmed"}>
-                    {p.checked ? "☑" : "☐"}
-                  </span>
-                  <span>
+                <li key={p.id} className="flex items-start gap-3 px-3.5 py-3">
+                  {p.checked ? (
+                    <CircleCheck aria-label="Confirmed" className="mt-0.5 h-5 w-5 shrink-0 text-good" />
+                  ) : (
+                    <CircleDashed aria-label="Not confirmed" className="mt-0.5 h-5 w-5 shrink-0 text-ink-faint" />
+                  )}
+                  <span className="text-[15px] leading-snug">
                     {p.label}
-                    {p.custom && <span className="ml-1 text-xs text-slate-500">(site-specific)</span>}
+                    {p.custom && <span className="ml-2 text-[13px] text-ink-muted">site-specific</span>}
                   </span>
                 </li>
               ))}
             </ul>
-          </Section>
+          </Panel>
 
-          <Section title={`${def.label} details`}>
+          <Panel title={`${def.label} details`}>
             <TypeDataView fields={def.fields} data={typeData} />
-          </Section>
+          </Panel>
 
           {(permit.completionNotes || permit.verificationNotes) && (
-            <Section title="Closure">
-              {permit.completionNotes && (
-                <div className="mb-3">
-                  <h3 className="section-title">Completion notes · {formatDateTime(permit.closedAt)}</h3>
-                  <p className="whitespace-pre-line">{permit.completionNotes}</p>
-                </div>
-              )}
-              {permit.verificationNotes && (
-                <div>
-                  <h3 className="section-title">Safety verification · {formatDateTime(permit.verifiedAt)}</h3>
-                  <p className="whitespace-pre-line">{permit.verificationNotes}</p>
-                </div>
-              )}
-            </Section>
+            <Panel title="Closure">
+              <div className="space-y-4">
+                {permit.completionNotes && (
+                  <div>
+                    <h3 className="eyebrow">Completion notes · {formatDateTime(permit.closedAt)}</h3>
+                    <p className="mt-1 whitespace-pre-line">{permit.completionNotes}</p>
+                  </div>
+                )}
+                {permit.verificationNotes && (
+                  <div>
+                    <h3 className="eyebrow">Safety verification · {formatDateTime(permit.verifiedAt)}</h3>
+                    <p className="mt-1 whitespace-pre-line">{permit.verificationNotes}</p>
+                  </div>
+                )}
+              </div>
+            </Panel>
           )}
 
-          <Section title="Audit trail">
-            <p className="mb-3 text-sm text-slate-600">Every change to this permit, in order. Entries can&apos;t be edited or deleted.</p>
+          <Panel title="Audit trail" aside={<span className="meta">{permit.auditLogs.length} entries · append-only</span>}>
             <AuditTimeline entries={permit.auditLogs} />
-          </Section>
+          </Panel>
         </div>
       </div>
     </div>

@@ -14,6 +14,8 @@ import { api, ApiError } from "@/lib/api-client";
 import { formatDateTime, fromPlantInput, toPlantInput } from "@/lib/time";
 import { StringList, TypeFields } from "./type-fields";
 import { TypeBadge, StatusBadge } from "./badges";
+import { typeIcon } from "./icons";
+import { ArrowLeft, ArrowRight, CircleAlert, CircleCheck, Plus, Save, Send, ShieldAlert, TriangleAlert, X } from "lucide-react";
 import type { PermitStatus } from "@/domain/enums";
 
 export interface PermitFormInitial {
@@ -192,83 +194,107 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
   return (
     <div className="space-y-4">
       {/* progress */}
-      <ol className="flex gap-1 overflow-x-auto pb-1" aria-label="Steps">
+      <ol className="grid grid-cols-5 gap-1.5" aria-label="Steps">
         {STEPS.map((s, i) => {
           const reachable = i === 0 ? !initial : Boolean(type);
+          const done = i < step;
           return (
-            <li key={s} className="flex-1">
+            <li key={s}>
               <button
                 type="button"
                 disabled={!reachable}
                 onClick={() => setStep(i)}
                 aria-current={step === i ? "step" : undefined}
-                className={`w-full min-w-[96px] border-b-4 px-1 pb-2 pt-1 text-left text-xs font-semibold sm:text-sm ${
-                  step === i ? "border-slate-900 text-slate-900" : i < step ? "border-green-700 text-slate-700" : "border-slate-300 text-slate-500"
-                }`}
+                aria-label={`Step ${i + 1}: ${s}`}
+                className="group w-full pb-1 text-left disabled:cursor-not-allowed"
               >
-                <span className="block text-[11px] text-slate-500">Step {i + 1}</span>
-                {i === 3 && def ? def.shortLabel + " details" : s}
+                <span
+                  className={`block h-1.5 rounded-full transition-colors duration-out ease-ui ${step === i ? "bg-action" : done ? "bg-ink" : "bg-line-strong"}`}
+                />
+                <span className={`mt-2 hidden text-[13px] font-medium leading-tight sm:block ${step === i ? "text-ink" : "text-ink-muted"}`}>
+                  {i === 3 && def ? `${def.shortLabel} details` : s}
+                </span>
               </button>
             </li>
           );
         })}
       </ol>
+      <p className="text-[13px] font-medium text-ink-muted sm:hidden">
+        Step {step + 1} of {STEPS.length} · <span className="text-ink">{step === 3 && def ? `${def.shortLabel} details` : STEPS[step]}</span>
+      </p>
 
       {message && (
-        <div role="status" className={`rounded-lg p-3 font-semibold ${message.kind === "ok" ? "bg-green-50 text-green-900 ring-1 ring-green-300" : "bg-red-50 text-red-900 ring-1 ring-red-300"}`}>
-          {message.text}
+        <div role="status" className={message.kind === "ok" ? "callout-good" : "callout-critical"}>
+          {message.kind === "ok" ? <CircleCheck aria-hidden /> : <CircleAlert aria-hidden />}
+          <p className="text-[15px] font-semibold">{message.text}</p>
         </div>
       )}
 
       {conflicts.length > 0 && step > 0 && (
-        <div className="rounded-xl border-2 border-red-700 bg-red-50 p-4">
-          <p className="font-bold text-red-900">⚠ Simultaneous operations conflict</p>
-          <p className="text-sm text-red-900">
-            This {def?.label.toLowerCase()} permit overlaps in time and location with:
-          </p>
-          <ul className="mt-2 space-y-1 text-sm">
-            {conflicts.map((c) => (
-              <li key={c.id}>
-                <a className="font-semibold underline" href={`/permits/${c.id}`} target="_blank" rel="noreferrer">
-                  {c.number}
-                </a>{" "}
-                <TypeBadge type={c.type} /> <StatusBadge status={c.status} /> {formatDateTime(c.plannedStart)} – {formatDateTime(c.validUntil)}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-2 text-sm text-red-900">Approvers will see this warning. Consider re-scheduling or confirm the two jobs are isolated from each other.</p>
+        <div className="callout-critical">
+          <ShieldAlert aria-hidden />
+          <div>
+            <p className="font-semibold">Simultaneous operations conflict</p>
+            <p className="text-[15px] text-ink-2">This {def?.label.toLowerCase()} permit overlaps in time and location with:</p>
+            <ul className="mt-2 space-y-1.5 text-[15px]">
+              {conflicts.map((c) => (
+                <li key={c.id} className="flex flex-wrap items-center gap-2">
+                  <a className="link font-mono" href={`/permits/${c.id}`} target="_blank" rel="noreferrer">
+                    {c.number}
+                  </a>
+                  <TypeBadge type={c.type} />
+                  <StatusBadge status={c.status} />
+                  <span className="font-mono text-[13px] text-ink-muted">
+                    {formatDateTime(c.plannedStart)} – {formatDateTime(c.validUntil)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-[15px] text-ink-2">Approvers will see this warning. Re-schedule, or confirm the two jobs are isolated from each other.</p>
+          </div>
         </div>
       )}
 
       <div className="card p-4 sm:p-6">
         {step === 0 && (
           <div>
-            <h2 className="mb-1 text-xl font-bold">What kind of work needs a permit?</h2>
-            <p className="mb-4 text-slate-600">The form adapts to the permit type. Type can&apos;t be changed after the draft is saved.</p>
+            <h2 className="text-xl font-semibold tracking-tight">What kind of work needs a permit?</h2>
+            <p className="mb-5 mt-1 text-ink-muted">The form adapts to the permit type. The type can&apos;t be changed once the draft is saved.</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {PERMIT_TYPES.map((t) => (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => chooseType(t.key)}
-                  className={`rounded-xl border-2 p-4 text-left transition hover:border-slate-900 ${type === t.key ? "border-slate-900 bg-slate-50" : "border-slate-200"}`}
-                >
-                  <TypeBadge type={t.key} />
-                  <span className="mt-2 block text-lg font-bold">{t.label}</span>
-                  <span className="block text-sm text-slate-600">{t.description}</span>
-                  <span className="mt-2 block text-xs text-slate-500">Valid up to {t.maxDurationHours} h · needs {t.requiredApprovals.length} sign-offs</span>
-                </button>
-              ))}
+              {PERMIT_TYPES.map((t) => {
+                const Icon = typeIcon(t.key);
+                const selected = type === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => chooseType(t.key)}
+                    aria-pressed={selected}
+                    className={`card-link flex gap-4 p-4 text-left ${selected ? "!border-action ring-2 ring-action/20" : ""}`}
+                  >
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-sm ${selected ? "bg-action text-white" : "bg-ground text-ink-2"}`}>
+                      <Icon aria-hidden className="h-6 w-6" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[17px] font-semibold leading-snug">{t.label}</span>
+                      <span className="mt-0.5 block text-[15px] leading-snug text-ink-muted">{t.description}</span>
+                      <span className="mt-2 block text-[13px] text-ink-muted">
+                        Valid up to {t.maxDurationHours} h · {t.requiredApprovals.length} sign-offs
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
         {step === 1 && def && (
           <div className="space-y-5">
-            <h2 className="text-xl font-bold">Job & location</h2>
+            <h2 className="text-xl font-semibold tracking-tight">Job & location</h2>
             <div>
               <label className="label" htmlFor="work">
-                Work description <span className="text-red-700">*</span>
+                Work description <span className="text-critical">*</span>
               </label>
               <textarea id="work" rows={3} className="input py-2" value={workDescription} onChange={(e) => setWorkDescription(e.target.value)} placeholder="Exactly what will be done, to what, and how." />
               {fieldErrors.workDescription && <p className="field-error">{fieldErrors.workDescription}</p>}
@@ -276,7 +302,7 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="sm:col-span-2">
                 <label className="label" htmlFor="contractor">
-                  Contractor / team performing the work <span className="text-red-700">*</span>
+                  Contractor / team performing the work <span className="text-critical">*</span>
                 </label>
                 <input id="contractor" className="input" value={contractor} onChange={(e) => setContractor(e.target.value)} />
                 {fieldErrors.contractor && <p className="field-error">{fieldErrors.contractor}</p>}
@@ -290,7 +316,7 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
             </div>
 
             <fieldset className="space-y-3">
-              <legend className="section-title">Location: plant → area → equipment</legend>
+              <legend className="eyebrow">Location: plant → area → equipment</legend>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
                   <label className="label" htmlFor="plant">Plant</label>
@@ -313,7 +339,7 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
                 </div>
                 <div>
                   <label className="label" htmlFor="area">
-                    Area <span className="text-red-700">*</span>
+                    Area <span className="text-critical">*</span>
                   </label>
                   <select
                     id="area"
@@ -352,7 +378,7 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
             </fieldset>
 
             <fieldset className="space-y-2">
-              <legend className="section-title">Validity window (IST)</legend>
+              <legend className="eyebrow">Validity window (IST)</legend>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="label" htmlFor="start">Planned start *</label>
@@ -373,7 +399,7 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
 
         {step === 2 && def && (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold">Hazards, PPE & precautions</h2>
+            <h2 className="text-xl font-semibold tracking-tight">Hazards, PPE & precautions</h2>
             <div>
               <span className="label">Hazards identified *</span>
               <StringList value={hazards} onChange={setHazards} itemLabel="Hazard" suggestions={def.defaultHazards} />
@@ -389,17 +415,28 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
               <ul className="space-y-2">
                 {precautions.map((p, i) => (
                   <li key={p.id}>
-                    <label className="flex min-h-[56px] cursor-pointer items-center gap-3 rounded-lg border-2 border-slate-200 bg-white px-3 py-2 has-[:checked]:border-green-700 has-[:checked]:bg-green-50">
+                    <label className="check-row min-h-[56px]">
                       <input
                         type="checkbox"
-                        className="h-7 w-7 shrink-0 accent-green-700"
+                        className="check-box h-7 w-7"
                         checked={p.checked}
                         onChange={(e) => setPrecautions(precautions.map((x, j) => (j === i ? { ...x, checked: e.target.checked } : x)))}
                       />
-                      <span className="flex-1">{p.label}</span>
+                      <span className="flex-1 text-[15px] leading-snug">
+                        {p.label}
+                        {p.custom && <span className="ml-2 text-[13px] text-ink-muted">site-specific</span>}
+                      </span>
                       {p.custom && (
-                        <button type="button" className="btn-ghost" onClick={() => setPrecautions(precautions.filter((_, j) => j !== i))} aria-label="Remove precaution">
-                          ×
+                        <button
+                          type="button"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm text-ink-muted hover:bg-ground hover:text-ink"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setPrecautions(precautions.filter((_, j) => j !== i));
+                          }}
+                          aria-label={`Remove precaution: ${p.label}`}
+                        >
+                          <X aria-hidden className="h-5 w-5" />
                         </button>
                       )}
                     </label>
@@ -417,7 +454,8 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
                     setCustomPrecaution("");
                   }}
                 >
-                  Add
+                  <Plus aria-hidden />
+                  Add precaution
                 </button>
               </div>
             </div>
@@ -426,9 +464,9 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
 
         {step === 3 && def && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">{def.label} details</h2>
-            <p className="text-sm text-slate-600">
-              Fields marked <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">before work starts</span> (gas tests, lock numbers) are usually taken on site just before
+            <h2 className="text-xl font-semibold tracking-tight">{def.label} details</h2>
+            <p className="text-[15px] text-ink-muted">
+              Fields marked <span className="rounded-sm bg-warning-soft px-1.5 py-0.5 text-[13px] font-medium text-warning">before work starts</span> (gas tests, lock numbers) are usually taken on site just before
               the job — you can submit without them, but the permit can&apos;t be activated until they&apos;re recorded and within safe limits.
             </p>
             <TypeFields fields={def.fields} value={typeData} onChange={setTypeData} errors={fieldErrors} />
@@ -437,41 +475,49 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
 
         {step === 4 && def && (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold">Review & submit</h2>
-            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <h2 className="text-xl font-semibold tracking-tight">Review & submit</h2>
+            <dl className="grid grid-cols-1 gap-4 rounded-sm border border-line p-4 sm:grid-cols-2">
               <div>
-                <dt className="text-sm text-slate-600">Type</dt>
+                <dt className="eyebrow">Type</dt>
                 <dd className="font-semibold">{def.label}</dd>
               </div>
               <div>
-                <dt className="text-sm text-slate-600">Location</dt>
+                <dt className="eyebrow">Location</dt>
                 <dd className="font-semibold">
-                  {plant?.name} → {area?.name ?? "—"}
-                  {equipmentId ? ` → ${area?.equipment.find((e) => e.id === equipmentId)?.tag}` : ""}
+                  {plant?.name} › {area?.name ?? "—"}
+                  {equipmentId ? ` › ${area?.equipment.find((e) => e.id === equipmentId)?.tag}` : ""}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm text-slate-600">Window (IST)</dt>
-                <dd className="font-semibold">
+                <dt className="eyebrow">Window (IST)</dt>
+                <dd className="font-mono text-[15px] font-semibold">
                   {formatDateTime(plannedStart)} → {formatDateTime(plannedEnd)}
                 </dd>
               </div>
               <div>
-                <dt className="text-sm text-slate-600">Approvals needed</dt>
+                <dt className="eyebrow">Approvals needed</dt>
                 <dd className="font-semibold">{def.requiredApprovals.map((r) => (r === "AREA_OWNER" ? `Area owner${area?.owner ? ` (${area.owner.name})` : ""}` : "Safety officer")).join(" + ")}</dd>
               </div>
             </dl>
             {issues.length > 0 ? (
-              <div className="rounded-xl border-2 border-amber-500 bg-amber-50 p-4">
-                <p className="font-bold text-amber-950">Before you can submit:</p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-950">
-                  {issues.map((i, k) => (
-                    <li key={k}>{i.message}</li>
-                  ))}
-                </ul>
+              <div className="callout-warning">
+                <TriangleAlert aria-hidden />
+                <div>
+                  <p className="font-semibold">
+                    {issues.length} thing{issues.length === 1 ? "" : "s"} to fix before you can submit
+                  </p>
+                  <ul className="mt-2 list-disc space-y-1 pl-5 text-[15px] text-ink-2">
+                    {issues.map((i, k) => (
+                      <li key={k}>{i.message}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             ) : (
-              <div className="rounded-xl border-2 border-green-700 bg-green-50 p-4 font-semibold text-green-900">✓ Ready to submit for approval.</div>
+              <div className="callout-good">
+                <CircleCheck aria-hidden />
+                <p className="font-semibold">Ready to submit for approval.</p>
+              </div>
             )}
           </div>
         )}
@@ -479,21 +525,26 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
 
       {/* sticky action bar — reachable with one thumb on a phone */}
       {step > 0 && (
-        <div className="sticky bottom-0 -mx-4 flex flex-wrap gap-2 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:mx-0 sm:rounded-xl sm:border">
-          <button type="button" className="btn-secondary" onClick={() => setStep(step - 1)} disabled={busy || (initial && step === 1)}>
-            ← Back
+        <div className="sticky bottom-0 -mx-4 flex items-center gap-2 border-t border-line bg-white px-4 py-3 sm:mx-0 sm:rounded-md sm:border">
+          <button type="button" className="btn-secondary px-3.5" onClick={() => setStep(step - 1)} disabled={busy || (initial && step === 1)} aria-label="Previous step">
+            <ArrowLeft aria-hidden />
+            <span className="hidden sm:inline">Back</span>
           </button>
-          <button type="button" className="btn-secondary" onClick={saveDraft} disabled={busy || !canSaveDraft}>
-            Save draft
+          <button type="button" className="btn-secondary px-3.5" onClick={saveDraft} disabled={busy || !canSaveDraft}>
+            <Save aria-hidden />
+            <span className="hidden sm:inline">Save draft</span>
+            <span className="sm:hidden">Save</span>
           </button>
           <div className="flex-1" />
           {step < 4 ? (
             <button type="button" className="btn-primary" onClick={() => setStep(step + 1)} disabled={busy}>
-              Next →
+              Next
+              <ArrowRight aria-hidden />
             </button>
           ) : (
-            <button type="button" className="btn-go" onClick={submit} disabled={busy || issues.length > 0}>
-              {busy ? "Submitting…" : "Submit for approval"}
+            <button type="button" className="btn-primary" onClick={submit} disabled={busy || issues.length > 0}>
+              <Send aria-hidden />
+              {busy ? "Submitting…" : "Submit"}
             </button>
           )}
         </div>
