@@ -1,0 +1,48 @@
+import type { PermitTypeDefinition } from "./definition";
+
+export const confinedSpace: PermitTypeDefinition = {
+  key: "CONFINED_SPACE",
+  label: "Confined Space Entry",
+  shortLabel: "Confined",
+  description: "Entry into tanks, vessels, pits, manholes, ducts — limited access, poor ventilation.",
+  badgeClass: "bg-purple-100 text-purple-900 ring-purple-300",
+  maxDurationHours: 8,
+  requiredApprovals: ["AREA_OWNER", "SAFETY_OFFICER"],
+  conflictsWith: ["HOT_WORK"],
+  hasEntryRegister: true,
+  fields: [
+    { kind: "text", name: "spaceId", label: "Space ID", group: "Space", requiredFor: "submit", help: "e.g. TK-204 or MH-07" },
+    { kind: "text", name: "entryPoint", label: "Entry point", group: "Space", requiredFor: "submit", help: "e.g. top manway, 600 mm" },
+    {
+      kind: "select",
+      name: "ventilationMethod",
+      label: "Ventilation method",
+      group: "Space",
+      requiredFor: "submit",
+      options: [
+        { value: "NATURAL", label: "Natural (all manways open)" },
+        { value: "FORCED_SUPPLY", label: "Forced air supply (blower)" },
+        { value: "EXHAUST", label: "Exhaust extraction" },
+        { value: "SUPPLY_AND_EXHAUST", label: "Supply + exhaust" },
+      ],
+    },
+    { kind: "text", name: "standbyAttendant", label: "Standby attendant", group: "Rescue", requiredFor: "submit", help: "Stays at the entry point at all times. Never enters." },
+    { kind: "textarea", name: "rescuePlan", label: "Rescue plan", group: "Rescue", requiredFor: "submit", help: "Rescue equipment on site, who performs the rescue, nearest medical help." },
+    { kind: "number", name: "gasO2Pct", label: "O₂", unit: "%", min: 0, max: 100, step: 0.1, safeRange: { min: 19.5, max: 23.5 }, group: "Atmospheric test", requiredFor: "activate", editableAfterSubmit: true },
+    { kind: "number", name: "gasLelPct", label: "LEL", unit: "%", min: 0, max: 100, step: 0.1, safeRange: { max: 10 }, group: "Atmospheric test", requiredFor: "activate", editableAfterSubmit: true },
+    { kind: "number", name: "gasH2sPpm", label: "H₂S", unit: " ppm", min: 0, max: 1000, step: 0.1, safeRange: { max: 10 }, group: "Atmospheric test", requiredFor: "activate", editableAfterSubmit: true },
+    { kind: "number", name: "gasCoPpm", label: "CO", unit: " ppm", min: 0, max: 2000, step: 1, safeRange: { max: 25 }, group: "Atmospheric test", requiredFor: "activate", editableAfterSubmit: true },
+    { kind: "datetime", name: "gasTestAt", label: "Test time", group: "Atmospheric test", requiredFor: "activate", editableAfterSubmit: true, maxAgeMinutesAtActivation: 60 },
+    { kind: "text", name: "gasTestedBy", label: "Tested by", group: "Atmospheric test", requiredFor: "activate", editableAfterSubmit: true },
+  ],
+  defaultHazards: ["Oxygen deficiency", "Toxic gas (H₂S / CO)", "Flammable atmosphere", "Engulfment", "Restricted exit"],
+  defaultPpe: ["Safety helmet", "Safety shoes", "Full body harness with retrieval line", "Personal 4-gas monitor", "Gloves"],
+  precautions: [
+    { id: "cs-isolate", label: "All inlet/outlet lines blinded or disconnected (not just valved)" },
+    { id: "cs-drained", label: "Space drained, cleaned and purged" },
+    { id: "cs-ventilation", label: "Ventilation running before and during entry" },
+    { id: "cs-rescue", label: "Rescue tripod / winch and breathing apparatus at entry point" },
+    { id: "cs-comms", label: "Communication method agreed between entrant and attendant" },
+    { id: "cs-lighting", label: "Lighting is 24 V or intrinsically safe" },
+  ],
+};
