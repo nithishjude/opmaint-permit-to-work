@@ -2,6 +2,7 @@
 // registry. Works for any permit type, including ones added later.
 
 import { TriangleAlert } from "lucide-react";
+import { ReadingMeter } from "./reading-meter";
 import { describeRange, isOutsideSafeRange, type FieldDef, type TypeData } from "@/domain/permit-types";
 import { formatDateTime } from "@/lib/time";
 
@@ -36,30 +37,40 @@ export function groupFields(fields: readonly FieldDef[]): [string, FieldDef[]][]
 
 export function TypeDataView({ fields, data }: { fields: readonly FieldDef[]; data: TypeData }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {groupFields(fields).map(([group, fs]) => (
         <div key={group}>
-          <h4 className="eyebrow mb-2">{group}</h4>
-          <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+          <h4 className="mb-2.5 text-[15px] font-semibold text-ink">{group}</h4>
+          <dl className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {fs.map((f) => {
               const v = data[f.name];
               const bad = isOutsideSafeRange(f, v);
               const missing = v === undefined || v === null || v === "" || (Array.isArray(v) && v.length === 0);
+              const wide = f.kind === "textarea" || f.kind === "stringList" || f.kind === "multiselect";
               return (
-                <div key={f.name} className={bad ? "-m-2 rounded-sm border border-critical-line bg-critical-soft p-2" : ""}>
-                  <dt className="text-sm text-ink-muted">
-                    {f.label}
-                    {f.kind === "number" && f.safeRange && <span className="ml-1 text-[13px] text-ink-faint">(safe {describeRange(f)})</span>}
+                <div
+                  key={f.name}
+                  className={`rounded-sm border p-3 ${wide ? "sm:col-span-2" : ""} ${
+                    bad ? "border-critical-line bg-critical-soft" : missing && f.requiredFor === "activate" ? "border-dashed border-warning-line bg-warning-soft/40" : "border-line bg-white"
+                  }`}
+                >
+                  <dt className="flex items-baseline justify-between gap-2 text-[13px] font-medium text-ink-muted">
+                    <span>{f.label}</span>
+                    {f.kind === "number" && f.safeRange && <span className="font-mono text-[12px] text-ink-faint">safe {describeRange(f)}</span>}
                   </dt>
-                  <dd className={`text-base font-semibold ${bad ? "text-critical" : missing ? "text-ink-faint" : "text-ink"}`}>
-                                        {formatFieldValue(f, v)}
-                    {bad && (
-                      <span className="mt-0.5 flex items-center gap-1 text-[13px] font-semibold">
-                        <TriangleAlert aria-hidden className="h-3.5 w-3.5" /> Outside safe range
-                      </span>
+                  <dd className={`mt-1 font-semibold ${f.kind === "number" || f.kind === "datetime" ? "font-mono text-[17px]" : "text-[15px] leading-snug"} ${bad ? "text-critical" : missing ? "text-ink-faint" : "text-ink"}`}>
+                    {missing && f.requiredFor === "activate" ? (
+                      <span className="font-sans text-[14px] font-medium text-warning">Needed before work starts</span>
+                    ) : (
+                      formatFieldValue(f, v)
                     )}
-                    {missing && f.requiredFor === "activate" && <span className="ml-2 text-[13px] font-medium text-warning">needed before work starts</span>}
                   </dd>
+                  {f.kind === "number" && f.safeRange && typeof v === "number" && <ReadingMeter field={f} value={v} />}
+                  {bad && (
+                    <p className="mt-1.5 flex items-center gap-1 text-[13px] font-semibold text-critical">
+                      <TriangleAlert aria-hidden className="h-3.5 w-3.5" /> Outside safe range
+                    </p>
+                  )}
                 </div>
               );
             })}

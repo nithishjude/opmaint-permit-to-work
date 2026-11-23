@@ -20,6 +20,7 @@ import { AuditTimeline } from "@/components/audit-timeline";
 import { ApprovalTrail } from "@/components/approval-trail";
 import { PermitQr } from "@/components/permit-qr";
 import { typeIcon } from "@/components/icons";
+import { LifecycleStepper } from "@/components/lifecycle-stepper";
 
 export const dynamic = "force-dynamic";
 
@@ -166,6 +167,21 @@ export default async function PermitDetailPage({ params, searchParams }: { param
             )}
             <div className="hidden sm:block">{status !== "DRAFT" && <PermitQr permitId={permit.id} number={permit.number} />}</div>
           </div>
+        </div>
+        <div className="-mx-5 mt-6 border-t border-line px-5 pt-5 sm:-mx-6 sm:px-6">
+          <LifecycleStepper
+            status={status}
+            createdAt={permit.createdAt}
+            submittedAt={permit.submittedAt}
+            approvedAt={
+              permit.approvals.length > 0 && permit.approvals.every((a) => a.decision === "APPROVED")
+                ? permit.approvals.reduce<Date | null>((m, a) => (a.decidedAt && (!m || a.decidedAt > m) ? a.decidedAt : m), null)
+                : null
+            }
+            activatedAt={permit.activatedAt}
+            closedAt={permit.closedAt}
+            verifiedAt={permit.verifiedAt}
+          />
         </div>
       </header>
 

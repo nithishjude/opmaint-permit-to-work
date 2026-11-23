@@ -525,7 +525,7 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
 
       {/* sticky action bar — reachable with one thumb on a phone */}
       {step > 0 && (
-        <div className="sticky bottom-0 -mx-4 flex items-center gap-2 border-t border-line bg-white px-4 py-3 sm:mx-0 sm:rounded-md sm:border">
+        <div className="sticky bottom-[calc(60px+env(safe-area-inset-bottom))] z-10 -mx-4 flex items-center gap-2 border-t border-line bg-white px-4 py-3 sm:mx-0 sm:rounded-md sm:border lg:bottom-0">
           <button type="button" className="btn-secondary px-3.5" onClick={() => setStep(step - 1)} disabled={busy || (initial && step === 1)} aria-label="Previous step">
             <ArrowLeft aria-hidden />
             <span className="hidden sm:inline">Back</span>

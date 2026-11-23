@@ -265,3 +265,8 @@ body {
     transform: none !important;
   }
 }
+
+/* Simultaneous-operations zone: red hatching (pattern, not colour alone). */
+.simops {
+  background-image: repeating-linear-gradient(135deg, rgba(180, 35, 24, 0.26) 0 2px, rgba(180, 35, 24, 0.05) 2px 8px);
+}

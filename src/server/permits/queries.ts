@@ -8,7 +8,7 @@ import { PERMIT_TYPE_KEYS } from "@/domain/permit-types";
 import { z } from "zod";
 import { expireDuePermits } from "./expiry";
 import { permitAuthInclude, toAuthView } from "./repository";
-import { findConflicts } from "./conflicts";
+import { conflictingTypes, findConflicts } from "./conflicts";
 
 export const permitFiltersSchema = z.object({
   status: z.enum(PERMIT_STATUSES).optional().catch(undefined),
@@ -181,3 +181,118 @@ export async function getPublicStatus(id: string, now = new Date()) {
   if (!p || p.status === "DRAFT") throw new DomainError("NOT_FOUND", "Permit not found.");
   return p;
 }
+
+/** Badge counts for the navigation (cheap: no list payloads). */
+export async function navCounts(actor: Actor, now = new Date()) {
+  const soon = new Date(now.getTime() + EXPIRING_SOON_MS);
+  const [pending, expiring, stopped] = await Promise.all([
+    prisma.permit.findMany({ where: { status: "PENDING_APPROVAL" }, select: { ...permitAuthInclude, type: true, status: true, requesterId: true, areaId: true, plannedStart: true, validUntil: true, typeData: true, extensionCount: true } }),
+    prisma.permit.count({ where: { status: { in: ["APPROVED", "ACTIVE", "SUSPENDED"] }, validUntil: { gt: now, lte: soon } } }),
+    prisma.permit.count({ where: { status: "SUSPENDED" } }),
+  ]);
+  const approvals = pending.filter((p) => authorize(actor, "APPROVE", toAuthView(p), now).allowed).length;
+  return { approvals, expiring, stopped };
+}
+
+// ---------------------------------------------------------------- site timeline
+
+export const TIMELINE_BEFORE_H = 8;
+export const TIMELINE_AFTER_H = 16;
+
+export interface TimelineBar {
+  id: string;
+  number: string;
+  type: string;
+  status: PermitStatus;
+  workDescription: string;
+  start: Date;
+  end: Date;
+  lane: number;
+}
+export interface TimelineRow {
+  areaId: string;
+  label: string;
+  plant: string;
+  lanes: number;
+  bars: TimelineBar[];
+  conflicts: { start: Date; end: Date; between: string[] }[];
+}
+
+/**
+ * Everything planned or running in a 24 h window around now, one row per
+ * area, overlapping permits stacked in lanes, and the simultaneous-operations
+ * overlaps (same rule as conflicts.ts) returned as zones to highlight.
+ */
+export async function siteTimeline(now = new Date()) {
+  const from = new Date(now.getTime() - TIMELINE_BEFORE_H * 3_600_000);
+  const to = new Date(now.getTime() + TIMELINE_AFTER_H * 3_600_000);
+  const permits = await prisma.permit.findMany({
+    where: {
+      status: { notIn: ["DRAFT", "CANCELLED", "REJECTED"] },
+      plannedStart: { lt: to },
+      validUntil: { gt: from },
+    },
+    select: {
+      id: true,
+      number: true,
+      type: true,
+      status: true,
+      workDescription: true,
+      plannedStart: true,
+      validUntil: true,
+      closedAt: true,
+      area: { select: { id: true, name: true, plant: { select: { code: true } } } },
+    },
+    orderBy: { plannedStart: "asc" },
+  });
+
+  const rows = new Map<string, TimelineRow>();
+  for (const p of permits) {
+    let row = rows.get(p.area.id);
+    if (!row) {
+      row = { areaId: p.area.id, label: p.area.name, plant: p.area.plant.code, lanes: 0, bars: [], conflicts: [] };
+      rows.set(p.area.id, row);
+    }
+    // A closed permit occupied the area until it was closed, not until validUntil.
+    const end = p.closedAt && p.closedAt < p.validUntil ? p.closedAt : p.validUntil;
+    // Greedy lane packing: first lane whose last bar has ended.
+    let lane = 0;
+    while (row.bars.some((b) => b.lane === lane && b.start < end && p.plannedStart < b.end)) lane++;
+    row.bars.push({ id: p.id, number: p.number, type: p.type, status: p.status as PermitStatus, workDescription: p.workDescription, start: p.plannedStart, end, lane });
+    row.lanes = Math.max(row.lanes, lane + 1);
+  }
+
+  const LIVE = new Set(["PENDING_APPROVAL", "APPROVED", "ACTIVE", "SUSPENDED"]);
+  for (const row of rows.values()) {
+    const live = row.bars.filter((b) => LIVE.has(b.status));
+    for (let i = 0; i < live.length; i++) {
+      for (let j = i + 1; j < live.length; j++) {
+        const a = live[i];
+        const b = live[j];
+        if (!conflictingTypes(a.type).includes(b.type)) continue;
+        const start = a.start > b.start ? a.start : b.start;
+        const end = a.end < b.end ? a.end : b.end;
+        if (start < end) row.conflicts.push({ start, end, between: [a.number, b.number] });
+      }
+    }
+    // Merge overlapping zones so several clashes draw as one hatched block.
+    row.conflicts.sort((x, y) => x.start.getTime() - y.start.getTime());
+    const merged: TimelineRow["conflicts"] = [];
+    for (const c of row.conflicts) {
+      const last = merged.at(-1);
+      if (last && c.start <= last.end) {
+        if (c.end > last.end) last.end = c.end;
+        last.between = [...new Set([...last.between, ...c.between])];
+      } else merged.push({ ...c, between: [...c.between] });
+    }
+    row.conflicts = merged;
+  }
+
+  return {
+    from,
+    to,
+    now,
+    rows: [...rows.values()].sort((a, b) => a.plant.localeCompare(b.plant) || a.label.localeCompare(b.label)),
+  };
+}
+export type SiteTimelineData = Awaited<ReturnType<typeof siteTimeline>>;

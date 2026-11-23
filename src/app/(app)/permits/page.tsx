@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { requirePageUser } from "@/server/auth";
 import { getReferenceData, listPermits, permitFiltersSchema } from "@/server/permits/queries";
 import { PermitRows } from "@/components/permit-list";
+import { PermitTable } from "@/components/permit-table";
 import { PERMIT_STATUSES, STATUS_LABELS } from "@/domain/enums";
 import { PERMIT_TYPES } from "@/domain/permit-types";
 
@@ -59,13 +60,13 @@ export default async function PermitsPage({ searchParams }: { searchParams: Prom
       </nav>
 
       {/* Plain GET form: filters live in the URL, so a filtered list can be bookmarked or shared. */}
-      <form className="card grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-6" method="get">
+      <form className="card grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-12" method="get">
         {filters.view && <input type="hidden" name="view" value={filters.view} />}
-        <div className="lg:col-span-2">
+        <div className="sm:col-span-2 lg:col-span-4">
           <label className="label" htmlFor="q">Search</label>
           <input id="q" name="q" className="input" placeholder="PTW number, job, contractor" defaultValue={filters.q ?? ""} />
         </div>
-        <div>
+        <div className="lg:col-span-3">
           <label className="label" htmlFor="status">Status</label>
           <select id="status" name="status" className="input" defaultValue={filters.status ?? ""}>
             <option value="">Any</option>
@@ -76,7 +77,7 @@ export default async function PermitsPage({ searchParams }: { searchParams: Prom
             ))}
           </select>
         </div>
-        <div>
+        <div className="lg:col-span-2">
           <label className="label" htmlFor="type">Type</label>
           <select id="type" name="type" className="input" defaultValue={filters.type ?? ""}>
             <option value="">Any</option>
@@ -87,7 +88,7 @@ export default async function PermitsPage({ searchParams }: { searchParams: Prom
             ))}
           </select>
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           <label className="label" htmlFor="areaId">Area</label>
           <select id="areaId" name="areaId" className="input" defaultValue={filters.areaId ?? ""}>
             <option value="">Any</option>
@@ -102,15 +103,15 @@ export default async function PermitsPage({ searchParams }: { searchParams: Prom
             ))}
           </select>
         </div>
-        <div>
+        <div className="lg:col-span-3">
           <label className="label" htmlFor="from">From</label>
           <input id="from" name="from" type="date" className="input" defaultValue={filters.from ?? ""} />
         </div>
-        <div>
+        <div className="lg:col-span-3">
           <label className="label" htmlFor="to">To</label>
           <input id="to" name="to" type="date" className="input" defaultValue={filters.to ?? ""} />
         </div>
-        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
+        <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-6">
           <button className="btn-secondary">
             <SlidersHorizontal aria-hidden />
             Apply filters
@@ -124,7 +125,18 @@ export default async function PermitsPage({ searchParams }: { searchParams: Prom
         </div>
       </form>
 
-      <PermitRows permits={permits} empty={filters.view === "my-approvals" ? "Nothing is waiting for your sign-off." : "No permits match these filters."} />
+      {permits.length === 0 ? (
+        <PermitRows permits={[]} empty={filters.view === "my-approvals" ? "Nothing is waiting for your sign-off." : "No permits match these filters."} />
+      ) : (
+        <>
+          <div className="hidden lg:block">
+            <PermitTable permits={permits} />
+          </div>
+          <div className="lg:hidden">
+            <PermitRows permits={permits} />
+          </div>
+        </>
+      )}
     </div>
   );
 }
