@@ -7,6 +7,8 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
+  // A ref, not state: pointerup can fire before React re-renders after the last move.
+  const hasInk = useRef(false);
   const [empty, setEmpty] = useState(true);
 
   useEffect(() => {
@@ -44,17 +46,21 @@ export function SignaturePad({ onChange }: { onChange: (dataUrl: string | null) 
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
     last.current = p;
-    if (empty) setEmpty(false);
+    if (!hasInk.current) {
+      hasInk.current = true;
+      setEmpty(false);
+    }
   }
   function end() {
     if (!drawing.current) return;
     drawing.current = false;
     last.current = null;
-    if (!empty) onChange(canvasRef.current!.toDataURL("image/png"));
+    if (hasInk.current) onChange(canvasRef.current!.toDataURL("image/png"));
   }
   function clear() {
     const c = canvasRef.current!;
     c.getContext("2d")!.clearRect(0, 0, c.width, c.height);
+    hasInk.current = false;
     setEmpty(true);
     onChange(null);
   }
