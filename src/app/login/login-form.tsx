@@ -6,7 +6,7 @@ import { ArrowRight, CircleAlert, LogIn } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { ROLE_LABELS, type Role } from "@/domain/enums";
 
-export function LoginForm({ next, demoUsers, demoPassword }: { next: string; demoUsers: { email: string; name: string; role: Role }[]; demoPassword: string }) {
+export function LoginForm({ next, demoUsers, demoPassword }: { next: string; demoUsers: { email: string; name: string; role: Role; scope?: string }[]; demoPassword: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +27,7 @@ export function LoginForm({ next, demoUsers, demoPassword }: { next: string; dem
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -62,23 +62,26 @@ export function LoginForm({ next, demoUsers, demoPassword }: { next: string; dem
             Password <span className="font-mono">{demoPassword}</span>
           </span>
         </div>
-        <ul className="mt-3 divide-y divide-line overflow-hidden rounded-md border border-line bg-white">
+        <ul className="mt-2.5 divide-y divide-line overflow-hidden rounded-md border border-line bg-white">
           {demoUsers.map((u) => (
             <li key={u.email}>
               <button
                 type="button"
                 disabled={busy !== null}
                 onClick={() => signIn(u.email, demoPassword)}
-                className="group flex min-h-[60px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors duration-out ease-ui hover:bg-ground disabled:opacity-50"
+                className="group flex min-h-[54px] w-full items-center gap-3 px-3.5 py-2 text-left transition-colors duration-out ease-ui hover:bg-ground disabled:opacity-50"
               >
-                <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ground-alt text-[13px] font-semibold text-ink-2">
+                <span aria-hidden className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ground-alt text-[12px] font-semibold text-ink-2">
                   {u.name
                     .split(" ")
                     .map((p) => p[0])
                     .join("")}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold">{ROLE_LABELS[u.role]}</span>
+                  <span className="flex items-baseline gap-2">
+                    <span className="text-[15px] font-semibold">{ROLE_LABELS[u.role]}</span>
+                    {u.scope && <span className="truncate text-[12px] font-medium text-ink-faint">{u.scope}</span>}
+                  </span>
                   <span className="block truncate text-[13px] text-ink-muted">
                     {u.name} · {u.email}
                   </span>
