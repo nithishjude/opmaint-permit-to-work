@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* High-contrast, big-target UI: the permit view is used outdoors, in sunlight,
+   on a phone, with gloves on. Minimum touch target 48px, body text 16px. */
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-slate-100 text-slate-900 antialiased;
+  font-size: 16px;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-lg px-5 text-base font-semibold
+      transition focus:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-slate-900 text-white hover:bg-slate-700 focus-visible:ring-slate-400;
+  }
+  .btn-go {
+    @apply btn bg-green-700 text-white hover:bg-green-800 focus-visible:ring-green-400;
+  }
+  .btn-stop {
+    @apply btn bg-red-700 text-white hover:bg-red-800 focus-visible:ring-red-400;
+  }
+  .btn-warn {
+    @apply btn bg-amber-500 text-slate-950 hover:bg-amber-400 focus-visible:ring-amber-300;
+  }
+  .btn-secondary {
+    @apply btn border-2 border-slate-300 bg-white text-slate-900 hover:border-slate-500 focus-visible:ring-slate-300;
+  }
+  .btn-ghost {
+    @apply btn min-h-[40px] px-3 text-slate-700 hover:bg-slate-200;
+  }
+  .card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+  .label {
+    @apply mb-1 block text-sm font-semibold text-slate-800;
+  }
+  .input {
+    @apply block min-h-[48px] w-full rounded-lg border-2 border-slate-300 bg-white px-3 text-base text-slate-900
+      placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-300;
+  }
+  .help {
+    @apply mt-1 text-sm text-slate-600;
+  }
+  .field-error {
+    @apply mt-1 text-sm font-semibold text-red-700;
+  }
+  .section-title {
+    @apply text-sm font-bold uppercase tracking-wide text-slate-600;
+  }
+}
