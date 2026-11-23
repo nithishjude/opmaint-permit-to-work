@@ -35,11 +35,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="hero-band -mx-4 -mt-6 flex flex-wrap items-end justify-between gap-4 px-4 pb-8 pt-8 sm:-mx-6 sm:px-6 lg:-mx-10 lg:-mt-8 lg:px-10 lg:pt-10">
         <div>
-          <p className="font-mono text-[13px] text-ink-muted">{formatDateTime(new Date())} IST</p>
-          <h1 className="mt-1 text-[28px] font-semibold leading-tight tracking-tight sm:text-[32px]">Good to see you, {firstName}</h1>
-          <p className="mt-1 text-ink-muted">
+          <p className="font-mono text-[13px] text-ink-2">{formatDateTime(new Date())} IST</p>
+          <h1 className="mt-1 text-[32px] font-bold leading-[1.05] tracking-[-0.03em] sm:text-[40px]">
+            Good to see you, {firstName}. <span className="text-ink-faint">Here&apos;s the site.</span>
+          </h1>
+          <p className="mt-2 text-[16px] text-ink-2">
             {attention > 0 ? `${attention} item${attention === 1 ? "" : "s"} need${attention === 1 ? "s" : ""} attention across both plants.` : "Nothing needs your attention right now."}
           </p>
         </div>

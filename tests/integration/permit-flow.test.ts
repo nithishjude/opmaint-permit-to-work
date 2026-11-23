@@ -308,6 +308,13 @@ describe("confined space entry register", () => {
   });
 });
 
+describe("concurrency", () => {
+  it("permits created at the same instant get unique numbers (regression)", async () => {
+    const created = await Promise.all(Array.from({ length: 8 }, () => createPermit(requester, hotWorkInput(), t0)));
+    expect(new Set(created.map((p) => p.number)).size).toBe(8);
+  });
+});
+
 describe("conflict detection", () => {
   it("flags hot work overlapping a confined-space permit in the same area", async () => {
     const hot = await createPermit(requester, hotWorkInput({ areaId: otherAreaId }), t0);

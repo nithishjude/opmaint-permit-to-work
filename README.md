@@ -43,10 +43,12 @@ The seed creates 2 plants, 4 areas, 9 equipment items and **14 permits covering 
 ### Tests
 
 ```bash
-npm test
+npm test          # 53 unit + integration tests (no server needed)
+npm run test:e2e  # 50 end-to-end tests against a running server
 ```
 
-There are 52 tests: unit tests for the state machine, permissions and permit-type registry, plus integration tests that run the real service against Postgres. The integration tests use a **separate `ptw_test` database**. It is created automatically next to your dev DB and never touches the demo data.
+- **Unit + integration (`npm test`, 53 tests):** the state machine, permission rules and permit-type registry, plus the real permit service against Postgres: the full lifecycle, self-approval for every role, area ownership, activation rules, expiry, the audit-log trigger, auto-suspend, the confined-space register, conflicts, and concurrent permit numbering. They use a **separate `ptw_test` database**, created automatically, so your demo data is never touched.
+- **End-to-end (`npm run test:e2e`, 50 tests):** drives every API endpoint as every role over real HTTP and cookies, the way a browser or `curl` would. It covers the authentication edge cases, all 5 permit types, every illegal transition the brief says *"we will try"*, readings and auto-suspend, extensions, closure, conflicts, filters, admin, deactivating a user mid-session, **two users acting at the same moment**, a **permit expiring in real time** (it waits about 90 s), the QR page, and a check that no page returns 500 for any role. To run it: start the app (`npm run build && npm start`), run `npm run db:seed`, then `npm run test:e2e`. Set `E2E_BASE_URL` if the app isn't on port 3000. The suite creates permits, so re-seed afterwards. `E2E_RESET=1` also tests the destructive demo-reset button.
 
 ---
 

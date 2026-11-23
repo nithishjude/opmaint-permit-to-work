@@ -33,10 +33,10 @@ function SideLink({ item, current }: { item: Item; current: boolean }) {
       href={item.href}
       aria-current={current ? "page" : undefined}
       className={`group relative flex min-h-[44px] items-center gap-3 rounded-sm px-3 text-[15px] font-medium transition-colors duration-out ease-ui ${
-        current ? "bg-white/10 text-white" : "text-white/65 hover:bg-white/5 hover:text-white"
+        current ? "bg-white/10 text-lime" : "text-white/70 hover:bg-white/5 hover:text-white"
       }`}
     >
-      <span aria-hidden className={`absolute inset-y-2 left-0 w-[3px] rounded-r bg-warning-fill transition-opacity duration-out ${current ? "opacity-100" : "opacity-0"}`} />
+      <span aria-hidden className={`absolute inset-y-2 left-0 w-[3px] rounded-r bg-lime transition-opacity duration-out ${current ? "opacity-100" : "opacity-0"}`} />
       <Icon aria-hidden className="h-[18px] w-[18px] shrink-0" />
       {item.label}
     </Link>
@@ -110,7 +110,7 @@ export function TabBar({ approvals }: { approvals: number }) {
                 className={`relative flex min-h-[60px] flex-col items-center justify-center gap-1 text-[12px] font-medium ${current ? "text-action" : "text-ink-muted"}`}
               >
                 {isNew ? (
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-action text-white shadow-sm">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-action text-lime shadow-sm">
                     <Icon aria-hidden className="h-5 w-5" />
                   </span>
                 ) : (
@@ -118,7 +118,7 @@ export function TabBar({ approvals }: { approvals: number }) {
                 )}
                 {isNew ? "New" : t.label}
                 {t.label === "Sign-offs" && approvals > 0 && (
-                  <span className="absolute right-[calc(50%-22px)] top-2 min-w-[18px] rounded-full bg-action px-1 text-center text-[12px] font-semibold leading-[18px] text-white">{approvals}</span>
+                  <span className="absolute right-[calc(50%-22px)] top-2 min-w-[18px] rounded-full bg-action px-1 text-center text-[12px] font-semibold leading-[18px] text-lime">{approvals}</span>
                 )}
                 {current && !isNew && <span aria-hidden className="absolute inset-x-6 top-0 h-[3px] rounded-b bg-action" />}
               </Link>

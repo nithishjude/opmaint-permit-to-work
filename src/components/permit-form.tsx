@@ -209,7 +209,7 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
                 className="group w-full pb-1 text-left disabled:cursor-not-allowed"
               >
                 <span
-                  className={`block h-1.5 rounded-full transition-colors duration-out ease-ui ${step === i ? "bg-action" : done ? "bg-ink" : "bg-line-strong"}`}
+                  className={`block h-1.5 rounded-full transition-colors duration-out ease-ui ${step === i ? "bg-lime ring-1 ring-action/30" : done ? "bg-action" : "bg-line-strong"}`}
                 />
                 <span className={`mt-2 hidden text-[13px] font-medium leading-tight sm:block ${step === i ? "text-ink" : "text-ink-muted"}`}>
                   {i === 3 && def ? `${def.shortLabel} details` : s}
@@ -272,7 +272,7 @@ export function PermitForm({ plants, initial }: { plants: ReferenceData; initial
                     aria-pressed={selected}
                     className={`card-link flex gap-4 p-4 text-left ${selected ? "!border-action ring-2 ring-action/20" : ""}`}
                   >
-                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-sm ${selected ? "bg-action text-white" : "bg-ground text-ink-2"}`}>
+                    <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-sm ${selected ? "bg-action text-lime" : "bg-ground text-ink-2"}`}>
                       <Icon aria-hidden className="h-6 w-6" />
                     </span>
                     <span className="min-w-0">

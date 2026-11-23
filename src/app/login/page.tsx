@@ -33,30 +33,26 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   return (
     <main className="grid min-h-screen lg:grid-cols-[minmax(0,1fr)_minmax(420px,520px)] xl:grid-cols-[minmax(0,1fr)_460px] 2xl:grid-cols-[minmax(0,1fr)_560px]">
       {/* Product side */}
-      <section className="relative hidden overflow-hidden bg-navy text-white lg:flex lg:flex-col">
-        {/* faint grid, like a plant drawing */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{ backgroundImage: "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)", backgroundSize: "48px 48px" }}
-        />
+      <section className="hero-band relative hidden overflow-hidden text-ink lg:flex lg:flex-col">
         <div className="relative flex items-center gap-2.5 px-12 pt-10 text-lg font-semibold">
           <BrandMark className="h-9 w-9" />
           <span>
             Permit to Work
-            <span className="block text-[12px] font-medium text-white/50">CMMS · Safety module</span>
+            <span className="block text-[12px] font-medium text-ink-faint">CMMS · Safety module</span>
           </span>
         </div>
 
         <div className="relative mx-auto flex w-full max-w-[1040px] flex-1 items-center gap-10 px-12 py-8 2xl:gap-14">
           <div className="max-w-[460px] flex-1 xl:min-w-[380px]">
-            <h1 className="text-[38px] font-semibold leading-[1.1] tracking-tight 2xl:text-[44px]">Authorise dangerous work before it starts.</h1>
-            <p className="mt-4 text-[17px] leading-relaxed text-white/70">Hot work, confined space, height, electrical isolation and excavation — requested, signed, started and closed in one place.</p>
+            <h1 className="text-[42px] font-bold leading-[1.02] tracking-[-0.03em] 2xl:text-[52px]">
+              Authorise dangerous work <span className="text-ink-faint">before it starts.</span>
+            </h1>
+            <p className="mt-4 text-[17px] leading-relaxed text-ink-2">Hot work, confined space, height, electrical isolation and excavation — requested, signed, started and closed in one place.</p>
             <ul className="mt-8 space-y-4">
               {FACTS.map(({ icon: Icon, text }) => (
-                <li key={text} className="flex gap-3 text-[16px] leading-snug text-white/85">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-white/10">
-                    <Icon aria-hidden className="h-[18px] w-[18px] text-warning-fill" />
+                <li key={text} className="flex gap-3 text-[16px] leading-snug text-ink">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-action">
+                    <Icon aria-hidden className="h-[18px] w-[18px] text-lime" />
                   </span>
                   <span className="pt-1">{text}</span>
                 </li>
@@ -68,7 +64,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
         </div>
 
-        <p className="relative px-12 pb-8 text-[13px] text-white/45">Chennai Refinery Unit · Hosur Components Plant · all times IST</p>
+        <p className="relative px-12 pb-8 text-[13px] text-ink-2">Chennai Refinery Unit · Hosur Components Plant · all times IST</p>
       </section>
 
       {/* Sign-in side */}
@@ -81,7 +77,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             </div>
             <p className="mt-3 text-ink-muted">Authorise dangerous work before it starts.</p>
           </div>
-          <h2 className="text-[26px] font-semibold tracking-tight">Sign in</h2>
+          <h2 className="text-[30px] font-bold tracking-[-0.03em]">Sign in</h2>
           <p className="mt-1 text-ink-muted">Use your plant account, or pick a demo role below.</p>
           <div className="mt-6">
             <LoginForm next={next && next.startsWith("/") && !next.startsWith("//") ? next : "/"} demoUsers={demo} demoPassword={DEMO_PASSWORD} />

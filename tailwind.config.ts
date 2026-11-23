@@ -1,7 +1,8 @@
 import type { Config } from "tailwindcss";
 
-// One system: corporate CMMS look — navy header, cool grey ground, blue-teal
-// accent. The interface is ~90% neutral; colour is
+// One system, in the Opmaint product language: forest-green ink, lime accent,
+// pale green-grey ground, sky-to-sand gradient for hero bands. The interface is
+// ~90% neutral; colour is
 // reserved for permit *status* (good / warning / critical / info), always paired
 // with an icon and a label, and one accent (`action`) for the main button,
 // links and focus. Never violet.
@@ -14,13 +15,14 @@ export default {
         mono: ["var(--font-mono)", "ui-monospace", "Consolas", "monospace"],
       },
       colors: {
-        navy: { DEFAULT: "#0b2545", deep: "#071a33", soft: "#13315c" },
-        ink: { DEFAULT: "#1b2a3a", 2: "#33475b", muted: "#586879", faint: "#8796a5" },
-        ground: { DEFAULT: "#f5f7fa", alt: "#e8edf3" },
-        line: { DEFAULT: "rgba(27,42,58,0.12)", strong: "rgba(27,42,58,0.26)" },
-        // Blue-teal, deliberately bluer than the status green so the main
-        // button never reads as "safe to start". White on it is 5.4:1.
-        action: { DEFAULT: "#0e7490", hover: "#155e75", soft: "#e3f2f6" },
+        // Opmaint forest green: sidebar, ink, primary buttons.
+        navy: { DEFAULT: "#163300", deep: "#0f2600", soft: "#24470d" },
+        ink: { DEFAULT: "#163300", 2: "#2f4a22", muted: "#566a56", faint: "#7a8c7a" },
+        ground: { DEFAULT: "#f3f7f3", alt: "#e5ede5" },
+        line: { DEFAULT: "rgba(22,51,0,0.12)", strong: "rgba(22,51,0,0.26)" },
+        // Primary action = dark green with a lime label (Opmaint's button).
+        action: { DEFAULT: "#163300", hover: "#0f2600", soft: "#e9f7dd" },
+        lime: { DEFAULT: "#a0f663", soft: "#e4fbd2", dot: "#98f556" },
         good: { DEFAULT: "#15803d", soft: "#e8f4ec", line: "#9fd0b0" },
         warning: { DEFAULT: "#a35200", fill: "#f5a524", soft: "#fdf3e2", line: "#efc27a" },
         critical: { DEFAULT: "#b42318", soft: "#fcebe9", line: "#f0a8a1" },

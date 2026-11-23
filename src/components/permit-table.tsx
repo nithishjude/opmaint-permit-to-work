@@ -66,7 +66,7 @@ export function PermitTable({ permits }: { permits: PermitRowData[] }) {
                       </span>
                     )}
                     {p.status === "APPROVED" && new Date(p.plannedStart) > new Date() && <span className="text-[13px] text-ink-muted">Starts {formatDateTime(p.plannedStart)}</span>}
-                    {p.canApprove && <span className="rounded-full bg-action px-2 py-0.5 text-[12px] font-semibold text-white">Needs your sign-off</span>}
+                    {p.canApprove && <span className="rounded-full bg-action px-2 py-0.5 text-[12px] font-semibold text-lime">Needs your sign-off</span>}
                   </div>
                 </td>
               </tr>

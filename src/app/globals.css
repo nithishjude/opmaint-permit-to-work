@@ -29,7 +29,17 @@ body {
 }
 
 ::selection {
-  background: #c9e6ee;
+  background: #d6f9bc;
+}
+
+/* Opmaint hero band: sky to sand, with a faint lime dot grid. */
+.hero-band {
+  background-image:
+    radial-gradient(circle, rgba(152, 245, 86, 0.55) 0.95px, transparent 1.2px),
+    linear-gradient(180deg, #cfe9f5 0%, #e4f1f3 38%, #efe6d8 72%, #e6dccb 100%);
+  background-size:
+    22px 22px,
+    100% 100%;
 }
 
 /* Focus: a 2px accent ring whose offset settles from 6px to 2px. */
@@ -75,7 +85,7 @@ body {
 
   /* The main action — the only filled accent in a view. */
   .btn-primary {
-    @apply btn border-action bg-action text-white;
+    @apply btn border-action bg-action text-lime;
   }
   .btn-primary:not(:disabled):hover {
     @apply border-action-hover bg-action-hover;
@@ -150,7 +160,7 @@ body {
     .card-link:hover {
       transform: translateY(-2px);
       border-color: theme("colors.line.strong");
-      box-shadow: 0 10px 24px -12px rgba(11, 37, 69, 0.22);
+      box-shadow: 0 10px 24px -12px rgba(22, 51, 0, 0.22);
       transition-duration: var(--m-in);
     }
   }
@@ -185,7 +195,7 @@ body {
   }
   .input:focus {
     @apply border-action outline-none;
-    box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.18);
+    box-shadow: 0 0 0 3px rgba(160, 246, 99, 0.55);
   }
   .input:disabled {
     @apply cursor-not-allowed bg-ground text-ink-muted;

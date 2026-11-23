@@ -22,7 +22,7 @@ function Reading({ label, value, safe, pos, band }: { label: string; value: stri
 export function PermitPreview() {
   return (
     <div aria-hidden className="w-[360px] select-none 2xl:w-[400px]">
-      <div className="rounded-md border-l-[6px] border-l-good bg-white p-5 text-ink shadow-[0_24px_60px_-20px_rgba(0,0,0,.55)]">
+      <div className="rounded-md border-l-[6px] border-l-good bg-white p-5 text-ink shadow-[0_30px_60px_-24px_rgba(22,51,0,.45)]">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[15px] font-semibold">PTW-2026-0001</span>
           <TypeBadge type="HOT_WORK" />
@@ -62,7 +62,7 @@ export function PermitPreview() {
         </ul>
       </div>
 
-      <div className="ml-8 mt-3 flex items-start gap-2.5 rounded-md border border-critical-line bg-critical-soft p-3 text-[13px] text-ink shadow-[0_16px_40px_-18px_rgba(0,0,0,.5)]">
+      <div className="ml-8 mt-3 flex items-start gap-2.5 rounded-md border border-critical-line bg-critical-soft p-3 text-[13px] text-ink shadow-[0_16px_40px_-20px_rgba(22,51,0,.4)]">
         <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-critical" />
         <span>
           <span className="font-semibold">Simultaneous operations.</span> Hot work overlaps a confined-space entry in Tank Farm.

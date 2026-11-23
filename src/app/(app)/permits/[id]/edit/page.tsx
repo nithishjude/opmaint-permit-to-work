@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { DomainError } from "@/domain/errors";
 import { requirePageUser } from "@/server/auth";
 import { getPermitDetail, getReferenceData } from "@/server/permits/queries";
 import { asPrecautions, asTypeData } from "@/server/permits/repository";
@@ -12,7 +13,15 @@ export const dynamic = "force-dynamic";
 export default async function EditPermitPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requirePageUser();
   const { id } = await params;
-  const [{ permit, actions }, plants] = await Promise.all([getPermitDetail(user, id), getReferenceData()]);
+  let detail;
+  try {
+    detail = await getPermitDetail(user, id);
+  } catch (e) {
+    if (e instanceof DomainError && e.code === "NOT_FOUND") notFound();
+    throw e;
+  }
+  const { permit, actions } = detail;
+  const plants = await getReferenceData();
   // Only drafts are editable, and only by whoever may edit them; otherwise show the permit.
   if (!actions.includes("EDIT_DRAFT")) redirect(`/permits/${id}`);
 

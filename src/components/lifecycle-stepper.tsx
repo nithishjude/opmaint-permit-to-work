@@ -68,7 +68,7 @@ export function LifecycleStepper(p: Props) {
             ? "border-critical bg-critical text-white"
             : "border-ink-muted bg-ink-muted text-white"
           : done
-            ? "border-action bg-action text-white"
+            ? "border-action bg-action text-lime"
             : isCurrent
               ? "border-action bg-white text-action ring-4 ring-action/15"
               : "border-line-strong bg-white text-ink-faint";

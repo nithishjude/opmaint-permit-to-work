@@ -102,7 +102,7 @@ export function SiteTimeline({ data }: { data: SiteTimelineData }) {
                     </span>
                   ))}
                 <span
-                  className="absolute top-0 z-20 -translate-x-1/2 rounded-full bg-action px-2 py-0.5 font-mono text-[12px] font-semibold text-white"
+                  className="absolute top-0 z-20 -translate-x-1/2 rounded-full bg-action px-2 py-0.5 font-mono text-[12px] font-semibold text-lime"
                   style={{ left: `${nowPct}%` }}
                 >
                   Now {formatTime(data.now)}

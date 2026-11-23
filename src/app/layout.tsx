@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Inter } from "next/font/google";
+import { IBM_Plex_Mono, Inter_Tight } from "next/font/google";
 import "./globals.css";
 
-// Inter for the interface (legible at small sizes, the usual enterprise-CMMS
-// face); IBM Plex Mono for permit numbers, readings and times.
-const sans = Inter({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans", display: "swap" });
+// Inter Tight: a free face close to Opmaint's own tight, heavy grotesk.
+// IBM Plex Mono for permit numbers, readings and times.
+const sans = Inter_Tight({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-sans", display: "swap" });
 const mono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["500", "600"], variable: "--font-mono", display: "swap" });
 
 export const metadata: Metadata = {
@@ -16,7 +16,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#0b2545",
+  themeColor: "#163300",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

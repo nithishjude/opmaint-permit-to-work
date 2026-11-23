@@ -60,6 +60,9 @@ async function assertLocation(db: Tx | typeof prisma, areaId: string, equipmentI
 }
 
 async function nextPermitNumber(tx: Tx, now: Date): Promise<string> {
+  // Serialise number allocation: concurrent creates would otherwise all read
+  // the same "last number". The lock is released when the transaction ends.
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext('permit_number'))`;
   const year = now.getUTCFullYear();
   const prefix = `PTW-${year}-`;
   const last = await tx.permit.findFirst({ where: { number: { startsWith: prefix } }, orderBy: { number: "desc" }, select: { number: true } });

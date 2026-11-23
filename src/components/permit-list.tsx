@@ -34,7 +34,7 @@ export function PermitRows({ permits, empty = "No permits." }: { permits: Permit
               <TypeBadge type={p.type} />
               <StatusBadge status={p.status} />
               {p.canApprove && (
-                <span className="inline-flex items-center rounded-full bg-action px-2.5 py-0.5 text-[13px] font-semibold text-white">Needs your sign-off</span>
+                <span className="inline-flex items-center rounded-full bg-action px-2.5 py-0.5 text-[13px] font-semibold text-lime">Needs your sign-off</span>
               )}
               <span className="ml-auto text-[15px]">
                 {p.status === "ACTIVE" || p.status === "SUSPENDED" ? (
