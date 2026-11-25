@@ -2,7 +2,7 @@
 
 A Permit to Work (PTW) module of the kind that slots into a maintenance system like Opmaint. A requester raises a permit for dangerous work (hot work, confined space, height, electrical isolation, excavation). The area owner and a safety officer inspect and sign it. Work can only start inside the approved window. The permit expires on its own, anyone with stop-work authority can suspend it, and it is closed and verified at the end. Every step lands in an audit log that can't be edited.
 
-- **Live demo:** `<add your Vercel URL>`
+- **Live demo:** https://opmaint-permit-to-work-upfi.vercel.app/ (demo logins are in the table below; password for all: `Password@123`)
 - **Loom walkthrough:** `<add your Loom URL>`
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript · PostgreSQL · Prisma 6 · Zod · Tailwind · Vitest
