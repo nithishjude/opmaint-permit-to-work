@@ -7,7 +7,7 @@ A Permit to Work (PTW) module of the kind that slots into a maintenance system l
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript · PostgreSQL · Prisma 6 · Zod · Tailwind · Vitest
 
-**Contents:** [Features](#features) · [Run locally](#run-it-locally--2-minutes) · [Scripts and environment](#scripts-and-environment) · [How it's built](#how-its-built) · [Decisions](#decisions-where-the-spec-was-silent) · [Known gaps](#known-gaps-left-on-purpose-or-not-finished) · [Deploying](#deploying-vercel--neon-both-free) · [API](#api-summary) · [Use of AI](#use-of-ai)
+**Contents:** [Features](#features) · [Run locally](#run-it-locally--2-minutes) · [Scripts and environment](#scripts-and-environment) · [Architecture](#architecture-at-a-glance) · [Workflow](#workflow-the-life-of-a-permit) · [How it's built](#how-its-built) · [Decisions](#decisions-where-the-spec-was-silent) · [Known gaps](#known-gaps-left-on-purpose-or-not-finished) · [Deploying](#deploying-vercel--neon-both-free) · [API](#api-summary) · [Use of AI](#use-of-ai)
 
 > Deeper dive with diagrams (layers, data model, lifecycle, request flow, concurrency, deployment): **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
@@ -90,6 +90,92 @@ npm run test:e2e  # 50 end-to-end tests against a running server
 - **End-to-end (`npm run test:e2e`, 50 tests):** drives every API endpoint as every role over real HTTP and cookies, the way a browser or `curl` would. It covers the authentication edge cases, all 5 permit types, every illegal transition the brief says *"we will try"*, readings and auto-suspend, extensions, closure, conflicts, filters, admin, deactivating a user mid-session, **two users acting at the same moment**, a **permit expiring in real time** (it waits about 90 s), the QR page, and a check that no page returns 500 for any role. To run it: start the app (`npm run build && npm start`), run `npm run db:seed`, then `npm run test:e2e`. Set `E2E_BASE_URL` if the app isn't on port 3000. The suite creates permits, so re-seed afterwards. `E2E_RESET=1` also tests the destructive demo-reset button.
 
 ---
+
+## Architecture at a glance
+
+One Next.js app and one PostgreSQL database. There are no separate services to run. Rules live in a pure domain layer, a service layer applies them inside database transactions, and the API and pages are thin on top.
+
+```mermaid
+flowchart TB
+  subgraph Browser
+    UI[Pages + client components<br/>mobile-first UI]
+    QR[Public QR status page]
+  end
+  subgraph App["Next.js 15 app (Vercel)"]
+    MW[Middleware: session gate]
+    API[REST routes /api/*<br/>parse → call → JSON]
+    SRV["Services src/server<br/>commands · queries · expiry · audit"]
+    DOM["Domain src/domain (pure TS)<br/>registry · state machine · permissions · guards"]
+  end
+  DB[(PostgreSQL<br/>Neon / Docker)]
+  CRON[Cron / pinger]
+
+  UI --> MW --> API --> SRV
+  UI -->|server components| SRV
+  QR --> SRV
+  CRON -->|Bearer CRON_SECRET| API
+  SRV --> DOM
+  SRV -->|"transaction: lock → authorize → write + audit"| DB
+```
+
+| Layer | Responsibility | Knows about |
+|---|---|---|
+| `src/domain` | Every rule: permit types, state machine, who may do what, time and data guards | Nothing else. No DB, no React. |
+| `src/server` | Applies the rules inside a transaction, writes the audit log, runs expiry | Domain, Prisma |
+| `src/app/api` | Parse input, call one command, map errors to HTTP | Server layer |
+| `src/app`, `src/components` | Render what the server says is allowed | Server queries, API |
+
+The full write-up, with data model, sequence diagrams, concurrency and deployment, is in **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+
+## Workflow: the life of a permit
+
+Who does what, from request to verified closure:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor RQ as Requester
+  actor AO as Area Owner
+  actor SO as Safety Officer
+  participant SYS as System
+
+  RQ->>SYS: Create draft (type, location, window, hazards, PPE, checklist)
+  SYS-->>RQ: Live conflict warning if it overlaps another permit
+  RQ->>SYS: Submit
+  SYS->>SYS: Create approval slots (area owner + safety officer)
+  AO->>SYS: Inspect and sign (own area only)
+  SO->>SYS: Inspect and sign (different person)
+  SYS->>SYS: All slots signed → APPROVED
+  RQ->>SYS: Record gas test / readings on site
+  RQ->>SYS: Activate (start time reached, readings fresh and in range)
+  SYS->>SYS: ACTIVE, countdown starts
+  loop While work is active
+    RQ->>SYS: Work log, entry/exit register, new readings
+    SYS->>SYS: Reading out of range → auto-suspend
+    RQ-->>SO: Optional: request extension (+1 to 4 h, max 2)
+  end
+  RQ->>SYS: Close with completion notes
+  SO->>SYS: Verify the area is safe → CLOSED_VERIFIED
+```
+
+### Step by step
+
+| # | Stage | Who | What happens | Rules enforced |
+|---|---|---|---|---|
+| 1 | **Draft** | Anyone | Fill the multi-step form: type, contractor, area and equipment, window, hazards, PPE, precautions checklist, type-specific fields | Window within the type's cap (8 h or 12 h). Equipment must belong to the area. Only the author and admins see drafts. |
+| 2 | **Submit** | Author | The permit gets a number (`PTW-2026-0001`) and approval slots are created | All required fields present. An overlap with another permit is recorded as a warning. |
+| 3 | **Approve** | Area owner, safety officer | Each inspects, signs on the canvas and approves or rejects | Never your own permit. Two different people. Area owners only in their own area. A rejection is final. |
+| 4 | **Prepare** | Requester | Record the on-site gas test and other readings | Readings are the only fields editable after submission, and each edit is audited. |
+| 5 | **Activate** | Requester or safety officer | Work starts | Start time reached, window not over, every approval in, readings fresh and inside safe ranges |
+| 6 | **Work** | Crew | Notes, confined-space entry/exit register, countdown, extension requests | Out-of-range reading suspends at once. QR page shows live status. |
+| 7 | **Stop work** | Requester, area owner, safety, admin | Suspend with a reason | Anyone with authority can stop. **Only safety or admin can resume.** |
+| 8 | **Extend** | Requester asks, safety decides | Add 1 to 4 hours before expiry | Max 2 per permit. The requester can't approve their own. |
+| 9 | **Close** | Requester | Completion notes | No one may still be logged inside a confined space |
+| 10 | **Verify** | Safety officer | Confirms the area is left safe | Terminal state `CLOSED_VERIFIED` |
+
+Other exits: a permit **expires** by itself when `validUntil` passes (checked on every read and write, plus a scheduled sweep). It can be **cancelled** before work starts, or by safety/admin during work. Closed work can't be cancelled, only verified. A **rejected** permit is replaced by raising a new one.
+
+Every step above writes an entry to the append-only audit log in the same database transaction as the change.
 
 ## How it's built
 
