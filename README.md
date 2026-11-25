@@ -7,6 +7,21 @@ A Permit to Work (PTW) module of the kind that slots into a maintenance system l
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript · PostgreSQL · Prisma 6 · Zod · Tailwind · Vitest
 
+**Contents:** [Features](#features) · [Run locally](#run-it-locally--2-minutes) · [Scripts and environment](#scripts-and-environment) · [How it's built](#how-its-built) · [Decisions](#decisions-where-the-spec-was-silent) · [Known gaps](#known-gaps-left-on-purpose-or-not-finished) · [Deploying](#deploying-vercel--neon-both-free) · [API](#api-summary) · [Use of AI](#use-of-ai)
+
+> Deeper dive with diagrams (layers, data model, lifecycle, request flow, concurrency, deployment): **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
+
+## Features
+
+- **Five permit types** on one shared core: hot work, confined space, working at height, electrical isolation (LOTO) and excavation. Each type is a registry entry, not a separate form or table.
+- **Full lifecycle:** draft, submit, two-person approval with a drawn signature, activate inside the approved window, suspend and resume, close, then verify. Rejection, cancellation and expiry are terminal.
+- **Server-enforced rules:** state machine, role and area permissions, and time and data preconditions. The UI shows only the actions the API would accept.
+- **Immutable audit log** with who, what, when and from → to, backed by a database trigger.
+- **Expiry that works unattended,** with a live countdown, an "Expiring < 2 h" view and a cron endpoint.
+- **Safety extras:** auto-suspend on an out-of-range gas reading, confined-space entry/exit register, simultaneous-operations conflict warnings, extension requests, and a public QR status page for walk-arounds.
+- **Mobile-first UI** with large targets and an always-visible STOP WORK action.
+- **103 automated tests:** 53 unit and integration, 50 end-to-end.
+
 ---
 
 ## Run it locally (≈ 2 minutes)
@@ -25,6 +40,30 @@ npm run dev                 # http://localhost:3000
 **No Docker?** Point `DATABASE_URL` in `.env` at any Postgres database you own, then run `npm run setup`.
 
 **Re-seed anytime:** `npm run db:seed`. The seed wipes the data and recreates it with times relative to *now*. On a deployment with `DEMO_MODE=true` there's also a **Reset demo data** button on the Admin page. That way a reviewer opening the app days later still sees permits that are active, expiring or waiting for approval.
+
+### Scripts and environment
+
+| Script | What it does |
+|---|---|
+| `npm run dev` | Dev server on :3000 |
+| `npm run build` / `npm start` | Production build and server |
+| `npm run db:up` | Start Postgres 16 in Docker (port 5433) |
+| `npm run db:migrate` | Apply migrations |
+| `npm run db:seed` | Wipe and re-seed demo data (times relative to now) |
+| `npm run db:reset` | Drop, re-migrate and re-seed |
+| `npm run setup` | `prisma generate` + migrate + seed (first run) |
+| `npm run lint` | Type-check (`tsc --noEmit`) |
+| `npm test` / `npm run test:watch` | Unit + integration tests |
+| `npm run test:e2e` | End-to-end tests against a running server |
+| `npm run vercel-build` | What Vercel runs: generate, migrate, build |
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `DATABASE_URL` | yes | Postgres connection string |
+| `AUTH_SECRET` | yes | Signs session JWTs (32+ random characters) |
+| `CRON_SECRET` | yes | Bearer token for `GET /api/cron/expire` |
+| `DEMO_MODE` | no | `true` enables the admin "Reset demo data" button |
+| `APP_URL` | no | Base URL used in QR codes (defaults to the request origin) |
 
 ### Demo logins — password for all: `Password@123`
 
@@ -73,8 +112,11 @@ src/
   components/             ← UI; type-fields.tsx renders ANY permit type's fields
 prisma/
   schema.prisma, migrations/, seed.ts
-tests/                    ← unit + integration
+tests/                    ← unit, integration, e2e
+docs/ARCHITECTURE.md      ← layers, data model, flows, diagrams
 ```
+
+Dependencies point one way: `app` and `components` → `server` → `domain`. The domain layer imports no database, framework or UI code, so the rules run in unit tests with no setup. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the diagrams.
 
 ### 1. One permit entity, type-specific fields as data
 
