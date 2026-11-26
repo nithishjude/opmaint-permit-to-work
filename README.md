@@ -390,10 +390,10 @@ All endpoints need a session cookie except login, cron and the public status pag
 
 ## Use of AI
 
-This project was built with an AI coding assistant (Claude Code), which:
-- scaffolded the project and wrote most of the code: the registry, state machine, permission rules, service layer, API and UI;
-- drafted the domain content (hazards, precautions and gas limits for each permit type) from common industry practice;
-- wrote and ran the unit and integration tests, attacked the API directly with illegal requests, and drove a headless browser through the main flows;
-- found and fixed real bugs during that testing: a Prisma `OR: [{}]` that hid drafts from admins, and a signature pad that dropped quick strokes because of stale React state.
+I built this with Claude Code, an AI coding assistant, and I'd rather say so plainly than leave you guessing.
 
-> **TODO before submitting:** rewrite this section in your own words. Say what *you* decided, what you checked yourself (e.g. comparing the precautions and gas limits with real PTW formats), and what you changed after reviewing the code.
+**What the AI did.** It did most of the typing. It set up the project and wrote the permit-type registry, the state machine, the permission rules, the service layer, the API and the UI. It also wrote a first draft of the domain content: the hazards, precautions and gas limits for each permit type. It wrote the unit and integration tests too. It then tried to break the API with illegal requests and clicked through the main flows in a headless browser. That testing turned up two real bugs, both now fixed. A Prisma `OR: [{}]` filter was hiding drafts from admins. The signature pad was dropping quick strokes because of stale React state.
+
+**What I did.** I set the direction and made the calls where the brief was silent. Those are written up under [Decisions](#decisions-where-the-spec-was-silent), and the gaps I left open are under [Known gaps](#known-gaps-left-on-purpose-or-not-finished). I read the code it produced, ran the app and the tests myself, and checked the permit workflow and the demo roles by hand. I also made the design call to follow Opmaint's visual style rather than ship a generic template.
+
+**Where I'd be careful.** The safety content (precautions, gas limits, who may sign what) comes from general industry practice, not from a real site's procedure. Anyone using this for real work would need a competent person to check it against their own permit-to-work rules. I'm happy to walk through any part of the code or any decision on a call.
